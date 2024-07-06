@@ -48,15 +48,6 @@ def make_user_persona(topic, user_answer, previous_conversation, language):
     Previous Conversation: {previous_conversation}
   """
 
-  # if previous_conversation:
-  #   default_template = default_template + """
-  #   ---
-  #   Previous Conversation: {previous_conversation}
-  #   """
-
-  # print("USER_ANSWER: ", user_answer)
-  # print("PREVIOUS QUESTION: ", previous_conversation)
-
   prompt_template = PromptTemplate.from_template(default_template)
   chain = prompt_template | llm | StrOutputParser()
   context = get_context(f"What is related information about {topic}?")
@@ -65,8 +56,6 @@ def make_user_persona(topic, user_answer, previous_conversation, language):
 
   return {
     "response": response,
-    # "is_last": response.find("<<END>>") != -1,
-    # "previous_conversation": f"{previous_conversation}\nUser: {user_answer}\nHost: {response}" if user_answer else f"Host: {response}"
   }
 
 
@@ -93,8 +82,6 @@ def summarize_user_persona(topic, previous_conversation, language):
 
   return {
     "response": response,
-    # "is_last": response.find("<<END>>") != -1,
-    # "previous_conversation": f"{previous_conversation}\nUser: {user_answer}\nHost: {response}" if user_answer else f"Host: {response}"
   }
 
 def initialize_chat(topic, language):
@@ -197,24 +184,10 @@ def main():
     print(question["response"])
     user_persona_answer = input("Enter your answer: ")
     previous_conversation =  f"{previous_conversation}\nUser: {user_persona_answer}\n"
-    # previous_conversation = response["previous_conversation"]
 
     if i == 4:
-      # print("user persona analyze finished")
       user_persona = summarize_user_persona(topic, previous_conversation, language)["response"]
   
-  print("USER_PERSONA: ", user_persona)
-  # while True:
-  #   user_answer = None
-  #   response = make_user_persona(topic, user_answer, previous_conversation, language)
-  #   print(response["response"])
-  #   if response["is_last"]:
-  #     print("user persona analyze finished")
-  #     user_persona = response["response"].replace("<<END>>", "")
-  #     break
-  #   else:
-  #     user_answer = input("Enter your answer: ")
-
   # Initialize Game
   init_chat = initialize_chat(topic, language)
   print(init_chat["response"])
