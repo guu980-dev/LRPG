@@ -6,24 +6,35 @@ from langchain_upstage import ChatUpstage
 import os
 from dotenv import load_dotenv
 from langchain_core.output_parsers import StrOutputParser
+from generate_image import generate_image, download_image
+import requests
+from IPython.display import display, Image
+from langchain_community.vectorstores.oraclevs import OracleVS
+import oracledb
+from langchain_community.vectorstores.utils import DistanceStrategy
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
-load_dotenv(dotenv_path)
 
-def get_context(invoke_text):
-  sample_text_list = [
-  "마법사의 나무는 마법 지팡이의 재료 중 최상급의 재료로 알려져 있다",
-  "There are Weasleys' Wizard Wheezes nearby the Diagon Alley",
-  "Diangon Alley is a place where you can buy magic wands",
-  "Hogwart is a school for witches and wizards",
-]
-  sample_docs = [Document(page_content=text) for text in sample_text_list]
-  vectorstore = Chroma.from_documents(
-      documents=sample_docs,
-      embedding=UpstageEmbeddings(model="solar-embedding-1-large"),
-  )
-  retriever = vectorstore.as_retriever()
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env') # Path to the .env file
+load_dotenv(dotenv_path) # Load the environment variables from the .env file
 
+
+def get_context(invoke_text, topic):
+  username=os.environ["DB_USER"]
+  password=os.environ["DB_PASSWORD"]
+  dsn=os.environ["DSN"]
+  con = oracledb.connect(user=username, password=password, dsn=dsn)
+  try: 
+    conn23c = oracledb.connect(user=username, password=password, dsn=dsn)
+    print("Connection successful!", conn23c.version)
+  except Exception as e:
+    print("Connection failed!")
+    
+  upstage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large")
+  vector_store = OracleVS(client=conn23c, 
+                          embedding_function=upstage_embeddings, 
+                          table_name=f"text_embeddings_{topic}",
+                          distance_strategy=DistanceStrategy.DOT_PRODUCT)
+  retriever = vector_store.as_retriever()
   return retriever.invoke(invoke_text)
 
 
@@ -59,6 +70,7 @@ def make_user_persona(topic, user_answer, previous_conversation, language):
   }
 
 
+# topic="HarryPotter", "Trump"
 def summarize_user_persona(topic, previous_conversation, language):
   llm = ChatUpstage()
   default_template = """
@@ -100,7 +112,6 @@ def initialize_chat(topic, language):
     Choices should be diverse and interesting, and each choice will reduce or increase user's life points or gold coins.
     If user make appropriate decision, user's life points or gold coins will increase.
     If user make inappropriate decision, user's life points or gold coins will decrease and decreasing amount should not be larger than amount of user owned.
-    When user select a choice, you should provide the result of the choice, but you should not show result before user select the choice.
     If the user choice is not included in suggestion, please ask him again to choose from the possible options.
     You should consider previous conversation and context to make the scenario.
     If user's life points or gold coins are less than 0, user will lose the game and get bad ending.
@@ -165,6 +176,46 @@ def make_conversation(user_choice, previous_conversation, user_persona, language
   }
 
 
+def convert_to_image_prompt(topic, user_persona, host_message):
+  llm = ChatUpstage()
+  prompt_template = PromptTemplate.from_template(
+    """
+    Please provide visual prompt of the host message which will be used for text-image generation.
+    Host message is D&D game scenario scene with choices on {topic}.
+    Visual prompt should consider the context and user persona.
+    Visual prompt should represent the scenario's scene and choices in the image.
+    ---
+    User Persona: {user_persona}
+    ---
+    Context: {context}
+    ---
+    Host Message: {host_message}
+    """
+  )
+  chain = prompt_template | llm | StrOutputParser()
+  context = get_context(f"What is related information about {topic}?")
+
+  response = chain.invoke({ "topic": topic, "host_message": host_message, "context": context, "user_persona": user_persona })
+
+  return {
+    "response": response
+  }
+
+
+def generate_scenario_image(topic, user_persona, host_message):
+  prompt_response = convert_to_image_prompt(topic, user_persona, host_message)["response"]
+  image_url = generate_image(prompt_response)
+  image_data = download_image(image_url)
+
+  return image_data, image_url
+
+
+def display_image_from_url(url):
+  response = requests.get(url)
+  img = Image(data=response.content)
+  display(img)
+
+
 def main():
   topic = input("Enter the topic: ")
   language = input("Enter the language: ")
@@ -196,6 +247,11 @@ def main():
   while True:
     user_choice = input("Enter your choice: ")
     response = make_conversation(user_choice, init_chat["previous_conversation"], user_persona, language)
+
+    # image_data, image_url = generate_scenario_image(topic, user_persona, response["response"])
+    # print("IMAGE_URL: ", image_url)
+    # display_image_from_url(image_url)
+
     print(response["response"])
 
     if response["is_last"]:
