@@ -9,14 +9,32 @@ from langchain_core.output_parsers import StrOutputParser
 from generate_image import generate_image, download_image
 import requests
 from IPython.display import display, Image
+from langchain_community.vectorstores.oraclevs import OracleVS
+import oracledb
+from langchain_community.vectorstores.utils import DistanceStrategy
 
-retriever = None # Global variable to store the retriever
+
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env') # Path to the .env file
 load_dotenv(dotenv_path) # Load the environment variables from the .env file
 
 
-def get_context(invoke_text):
-  global retriever
+def get_context(invoke_text, topic):
+  username=os.environ["DB_USER"]
+  password=os.environ["DB_PASSWORD"]
+  dsn=os.environ["DSN"]
+  con = oracledb.connect(user=username, password=password, dsn=dsn)
+  try: 
+    conn23c = oracledb.connect(user=username, password=password, dsn=dsn)
+    print("Connection successful!", conn23c.version)
+  except Exception as e:
+    print("Connection failed!")
+    
+  upstage_embeddings = UpstageEmbeddings(model="solar-embedding-1-large")
+  vector_store = OracleVS(client=conn23c, 
+                          embedding_function=upstage_embeddings, 
+                          table_name=f"text_embeddings_{topic}",
+                          distance_strategy=DistanceStrategy.DOT_PRODUCT)
+  retriever = vector_store.as_retriever()
   return retriever.invoke(invoke_text)
 
 
@@ -52,6 +70,7 @@ def make_user_persona(topic, user_answer, previous_conversation, language):
   }
 
 
+# topic="HarryPotter", "Trump"
 def summarize_user_persona(topic, previous_conversation, language):
   llm = ChatUpstage()
   default_template = """

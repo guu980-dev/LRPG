@@ -177,7 +177,7 @@ def upload_db_Trump():
 
 
 def main():
-    upload_db_harrypotter()
+    upload_db_Trump()
 
 if __name__ == "__main__":
     main()
