@@ -13,6 +13,17 @@
 
 ```
 
+### Installation
+
+**Prerequisite**: Gradio requires [Python 3.8 or higher](https://www.python.org/downloads/)
+
+
+We recommend installing Gradio using `pip`, which is included by default in Python. Run this in your terminal or command prompt:
+
+```
+pip install gradio
+```
+
 ## 기타
 test
 #### 1. test   
