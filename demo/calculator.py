@@ -1,26 +1,42 @@
 import gradio as gr
-#from foo import BAR
-#
-def calculator(num1, operation, num2):
+def generate_fake_image(num1, operation, num2):
     if operation == "add":
-        return num1 + num2
+        return num1 + num2, "https://dummyimage.com/300/09f.png"
     elif operation == "subtract":
-        return num1 - num2
+        return num1 - num2, "https://dummyimage.com/300/09f.png"
     elif operation == "multiply":
-        return num1 * num2
+        return num1 * num2, "https://dummyimage.com/300/09f.png"
     elif operation == "divide":
         if num2 == 0:
             raise gr.Error("Cannot divide by zero!")
-        return num1 / num2
+        return num1 / num2, "https://dummyimage.com/300/09f.png"
+
+def track_score(score):
+
+    return ["1", "2", "3", "4"]
+
+scores = track_score
+
+def generate_fake_image(num1, operation, num2):
+    if operation == "add":
+        return num1 + num2, "https://dummyimage.com/300/09f.png"
+    elif operation == "subtract":
+        return num1 - num2, "https://dummyimage.com/300/09f.png"
+    elif operation == "multiply":
+        return num1 * num2, "https://dummyimage.com/300/09f.png"
+    elif operation == "divide":
+        if num2 == 0:
+            raise gr.Error("Cannot divide by zero!")
+        return num1 / num2, "https://dummyimage.com/300/09f.png"
 
 demo = gr.Interface(
-    calculator,
+    generate_fake_image,
     [
         "number",
-        gr.Radio(["add", "subtract", "multiply", "divide"]),
+        gr.Radio(scores),
         "number"
     ],
-    "number",
+    ["textbox", "image"],
     examples=[
         [45, "add", 3],
         [3.14, "divide", 2],
