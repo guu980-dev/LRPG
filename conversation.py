@@ -6,6 +6,7 @@ from langchain_upstage import ChatUpstage
 import os
 from dotenv import load_dotenv
 from langchain_core.output_parsers import StrOutputParser
+from generate_image import generate_image, download_image
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -163,6 +164,40 @@ def make_conversation(user_choice, previous_conversation, user_persona, language
     "is_last": response.find("<<END>>") == -1,
     "previous_conversation": f"{previous_conversation}\nUser: {user_choice}\nHost: {response}"
   }
+
+
+def convert_to_image_prompt(topic, user_persona, host_message):
+  llm = ChatUpstage()
+  prompt_template = PromptTemplate.from_template(
+    """
+    Please provide visual prompt of the host message which will be used for text-image generation.
+    Host message is D&D game scenario with choices on {topic}.
+    Visual prompt should consider the context and user persona.
+    Visual prompt should represent the scenario's scene and choices in the image.
+    ---
+    User Persona: {user_persona}
+    ---
+    Context: {context}
+    ---
+    Host Message: {host_message}
+    """
+  )
+  chain = prompt_template | llm | StrOutputParser()
+  context = get_context(f"What is related information about {topic}?")
+
+  response = chain.invoke({ "host_message": host_message, "context": context, "user_persona": user_persona })
+
+  return {
+    "response": response
+  }
+
+
+def generate_scenario_image():
+  prompt_response = convert_to_image_prompt()["response"]
+  image_url = generate_image(prompt_response)
+  image_data = download_image(image_url)
+
+  return image_data, image_url
 
 
 def main():
