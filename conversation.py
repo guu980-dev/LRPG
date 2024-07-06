@@ -10,23 +10,13 @@ from generate_image import generate_image, download_image
 import requests
 from IPython.display import display, Image
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
-load_dotenv(dotenv_path)
+retriever = None # Global variable to store the retriever
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env') # Path to the .env file
+load_dotenv(dotenv_path) # Load the environment variables from the .env file
+
 
 def get_context(invoke_text):
-  sample_text_list = [
-  "마법사의 나무는 마법 지팡이의 재료 중 최상급의 재료로 알려져 있다",
-  "There are Weasleys' Wizard Wheezes nearby the Diagon Alley",
-  "Diangon Alley is a place where you can buy magic wands",
-  "Hogwart is a school for witches and wizards",
-]
-  sample_docs = [Document(page_content=text) for text in sample_text_list]
-  vectorstore = Chroma.from_documents(
-      documents=sample_docs,
-      embedding=UpstageEmbeddings(model="solar-embedding-1-large"),
-  )
-  retriever = vectorstore.as_retriever()
-
+  global retriever
   return retriever.invoke(invoke_text)
 
 
