@@ -6,6 +6,7 @@ initial_title = "당신의 선택은? "
 initial_description = "<div style='display: flex; justify-content: center; align-items: center; height: auto;'><img src='https://i.ytimg.com/vi/Reo3MnaVb5M/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLD6ZP2I8d1yVXB9Aet0fv1qCeZmNQ' alt='annotated'></div>"
 
 
+# 통신해서 결과값을 가져오기.
 def scenario():
     answer = random.randint(1, 100)
     return answer
