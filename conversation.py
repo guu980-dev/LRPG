@@ -12,6 +12,7 @@ from IPython.display import display, Image
 from langchain_community.vectorstores.oraclevs import OracleVS
 import oracledb
 from langchain_community.vectorstores.utils import DistanceStrategy
+import ast, json
 
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env') # Path to the .env file
@@ -41,17 +42,16 @@ def get_context(invoke_text, topic):
 def make_user_persona(topic, user_answer, previous_conversation, language):
   llm = ChatUpstage()
   default_template = """
-    Please answer in {language} language.
-    You are best D&D host with {topic}. And user is playing game with you.
+    Please answer in {language}.
+    You are best TRPG host with {topic}. And user is playing game with you.
+    The detailed information about the fictional universe of game is included in context.
     Please answer in a exciting tone as a host.
     Before starting the game, user wants to create a persona.
     Please provide 1 question to user to create a persona.
     You must make only one question per response.
     Each question should be related to user's character, such as name, gender, personality or any related features with the topic.
     When asking questions, please consider the topic and make the question interesting.
-    You should consider previous conversation's questions.
-    Question should not ask same things from previous questions, and should be diverse and interesting.
-    Do not ask similar questions from previous questions.
+    You should consider previous conversation to prevent asking same questions, and make the diverse and context related questions.
     First question should include the introduction of the game.
     ---
     Context: {context}
@@ -61,7 +61,8 @@ def make_user_persona(topic, user_answer, previous_conversation, language):
 
   prompt_template = PromptTemplate.from_template(default_template)
   chain = prompt_template | llm | StrOutputParser()
-  context = get_context(f"What is related information about {topic}?")
+  # context = get_context(f"What is related information about {topic}?")
+  context = ""
 
   response = chain.invoke({ "context": context, "topic": topic, "language": language, "previous_conversation": previous_conversation if previous_conversation else None })
 
@@ -74,23 +75,31 @@ def make_user_persona(topic, user_answer, previous_conversation, language):
 def summarize_user_persona(topic, previous_conversation, language):
   llm = ChatUpstage()
   default_template = """
-    Please answer in {language} language.
-    You are best D&D host with {topic}. And user is playing game with you.
+    Please answer in {language}.
+    You are best {topic} TRPG host, and user is playing game with you.
+    The detailed information about the fictional universe of game is included in context.
     Please answer in a exciting tone as a host.
     Before starting the game, user wants to create a persona.
-    You have finished asking questions to user to create a persona and it's included on the previous conversation.
-    Please summary information and create the user's persona with detail.
+    You have finished asking questions to user to create a persona and it's included in the previous conversation.
+    Please summarize the character's information and make the user's persona.
+    Response will be used for context in game scenario so answer in appropriate format.
+    Length of persona should not be too long or too short.
+    Do not include any other information or rhetoric except user's persona.
     ---
     Context: {context}
     ---
     Previous Conversation: {previous_conversation}
+    ---
+    Summarized User Persona: 
   """
 
   prompt_template = PromptTemplate.from_template(default_template)
   chain = prompt_template | llm | StrOutputParser()
-  context = get_context(f"What is related information about {topic}?")
+  # context = get_context(f"What is related information about {topic}?")
+  context = ""
 
   response = chain.invoke({ "context": context, "topic": topic, "language": language, "previous_conversation": previous_conversation })
+  response = response.replace("User Persona:", "게임을 진행하는 플레이어는 다음과 같은 캐릭터를 가지고 있습니다.")
 
   return {
     "response": response,
@@ -176,6 +185,178 @@ def make_conversation(user_choice, previous_conversation, user_persona, language
   }
 
 
+  # prompt_template = PromptTemplate.from_template(
+  #   """
+  #   Please answer in {language}.
+  #   You are best {topic} TRPG host, and user is playing game with you.
+  #   The detailed information about the fictional universe of game is included in context.
+  #   Please create a scenario with an interesting story and ending, with 5 rounds.
+  #   Each round should include an interesting event and allow the user to move on with the appropriate choice for that step.
+  #   Scenario should be related to fictional universe and user's persona.
+  #   Response format should follow the below format.
+  #   ---
+  #   Context: {context}
+  #   ---
+  #   User Persona: {user_persona}
+  #   ---
+  #   Format:
+  #   1: [주요 이벤트 1의 제목]
+  #   [주요 이벤트 1의 줄거리] <END>
+  #   2: [주요 이벤트 2의 제목]
+  #   [주요 이벤트 2의 줄거리] <END>
+  #   3: [주요 이벤트 3의 제목]
+  #   [주요 이벤트 3의 줄거리] <END>
+  #   4: [주요 이벤트 4의 제목]
+  #   [주요 이벤트 4의 줄거리] <END>
+  #   5: [주요 이벤트 5의 제목]
+  #   [주요 이벤트 5의 줄거리] <END>
+  #   ---
+  #   Scenario:
+  #   1.
+  #   2.
+  #   3.
+  #   4.
+  #   5.
+  #   """
+  # )
+def create_scenario(topic, user_persona, language):
+  llm = ChatUpstage()
+  prompt_template = PromptTemplate.from_template(
+    """
+    Please answer in {language}.
+    You are best {topic} TRPG host, and user is playing game with you.
+    The detailed information about the fictional universe of game is included in context.
+    Please create a scenario with an interesting story and ending, with 5 rounds.
+    Each round should include an interesting event and allow the user to move on with the appropriate choice for that step.
+    Scenario should be related to fictional universe and user's persona.
+    Response should be python list of 5 json element with "title" and "story".
+    ---
+    Context: {context}
+    ---
+    User Persona: {user_persona}
+    ---
+    Scenario:
+    """
+  )
+  chain = prompt_template | llm | StrOutputParser()
+  # context = get_context(f"What is related information about {user_choice}?")
+  context = ""
+
+  while(True):
+    try:
+      response = chain.invoke({ "topic": topic, "context": context, "user_persona": user_persona, "language": language })
+      scenarios = ast.literal_eval(response)
+      entire_story = [f"{idx}. {scenario["title"]}\n{scenario["story"]}\n\n" for idx, scenario in enumerate(scenarios)]
+      
+      return {
+        "response": response,
+        "scenarios": scenarios,
+        "entire_story": entire_story,
+      }
+    except:
+      continue
+
+
+# ""
+#     Please answer in {language}.
+#     You are best {topic} TRPG host, and user is playing game with you.
+#     The detailed information about the fictional universe of game is included in context.
+#     Please create this round's content based on User Persona, Entire Story, This Round Story, and Previous Conversation.
+#     You should make 1. round content which will be displayed to user that can explain the situation, 2. user choices which will be displayed to user that can explain the choice's action, and 3. choice effect which will not be displayed to user that can explain the effect of the choice.
+#     User has life points and coins which will be affected by the choices.
+#     Each choice should be diverse and interesting, and reduce or increase user's life points or coins but this effect should not be mentioned in the choice.
+#     You should consider previous conversation and user's choices to make the content and mention their effect on the beginning.
+#     Story should be interesting and naturally connected to the previous conversation.
+#     Your response should be python dictionary with below format.
+#     ---
+#     Context: {context}
+#     ---
+#     User Persona: {user_persona}
+#     ---
+#     Entire Story: {entire_story}
+#     ---
+#     This Round Story: {round_story}
+#     ---
+#     Previous Conversation: {previous_conversation}
+#     ---
+#     format:
+#     \{
+#       round_story: \"Story to display to player\",
+#       user_choices: ["Choice 1 description", "Choice 2 description", "Choice 3 description"],
+#       choice_effect: [\{ "money": integer of money amount change, "life: integer of life amount change \}],
+#     \}
+#       User Choice:
+#       - [Choice1: Description]
+#       - [Choice2: Description]
+#       - [Choice3: Description]
+#       Choice Effect:
+#       - [Choice1: Money+2, Life-1]
+#       - [Choice2: Life-2]
+#       - [Choice3: Life+4, Money+1]
+#     ---
+#     Round Story:
+#     User Choice:
+#     Choice Effect:
+#     """
+
+def play_game(topic, user_persona, language, entire_story, round_story, previous_conversation, previous_choice_effect):
+  llm = ChatUpstage()
+  prompt_template = PromptTemplate.from_template(
+    """
+    Please answer in {language}.
+    You are best {topic} TRPG host, and user is playing game with you.
+    The detailed information about the fictional universe of game is included in context.
+    Please create this round's content based on User Persona, Entire Story, This Round Story, and Previous Conversation.
+    You should make 1. round content which will be displayed to user that can explain the situation, 2. user choices which will be displayed to user that can explain the choice's action, and 3. choice effect which will not be displayed to user that can explain the effect of the choice.
+    User has life points and coins which will be affected by the choices.
+    Choices should be at least 3 and total round should be less than 7.
+    Each choice should be diverse and interesting, and reduce or increase user's life points or coins between (-10, 10), but this effect should not be shown in user choices.
+    Each choice should be diverse and interesting with long and detailed explanation of the choice's action.
+    You should consider previous conversation and user's choices to make the content and mention their effect on the beginning.
+    Round content must start with explanation of user's previous choices and their effects if below Previous Choice Effect is not empty.
+    Round content should be interesting and naturally connected to the previous conversation, with long and detailed explanation of the situation.
+    Your response should be python dictionary with below format.
+    ---
+    Context: {context}
+    ---
+    User Persona: {user_persona}
+    ---
+    Entire Story: {entire_story}
+    ---
+    This Round Story: {round_story}
+    ---
+    Previous Conversation: {previous_conversation}
+    ---
+    Previous Choice Effect: {previous_choice_effect}
+    ---
+    format:
+    {{
+      round_content: \"Explanation of previous choice's effect and changes by it's result from the story. And then, Story explanation to show player\",
+      user_choices: ["Choice 1 description", "Choice 2 description", "Choice 3 description"],
+      choice_effects: [{{ "money": integer of money amount change, "life: integer of life amount change }}],
+    }}
+    ---
+    """
+  )
+  chain = prompt_template | llm | StrOutputParser()
+  # context = get_context(f"What is related information about {user_choice}?")
+  context = ""
+
+  while(True):
+    try:
+      response = chain.invoke({ "language": language, "topic": topic, "context": context, "user_persona": user_persona, "entire_story": entire_story, "round_story": round_story, "previous_conversation": previous_conversation, "previous_choice_effect": previous_choice_effect })
+      response_dict = json.loads(response)
+
+      return {
+        "response": response,
+        "round_content": response_dict["round_content"],
+        "user_choices": response_dict["user_choices"],
+        "choice_effects": response_dict["choice_effects"],
+      }
+    except:
+      continue
+
+
 def convert_to_image_prompt(topic, user_persona, host_message):
   llm = ChatUpstage()
   prompt_template = PromptTemplate.from_template(
@@ -234,7 +415,7 @@ def main():
 
     print(question["response"])
     user_persona_answer = input("Enter your answer: ")
-    previous_conversation =  f"{previous_conversation}\nUser: {user_persona_answer}\n"
+    previous_conversation =  f"{previous_conversation}\nUser: {user_persona_answer}\nHost: "
 
     if i == 4:
       user_persona = summarize_user_persona(topic, previous_conversation, language)["response"]
