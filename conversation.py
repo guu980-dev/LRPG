@@ -311,7 +311,8 @@ def play_game(topic, user_persona, language, entire_story, round_story, previous
     User has life points and coins which will be affected by the choices.
     Choices should be at least 3 and total round should be less than 7.
     Each choice should be diverse and interesting, and reduce or increase user's life points or coins between (-10, 10), but this effect should not be shown in user choices.
-    Each choice should be diverse and interesting with long and detailed explanation of the choice's action.
+    The effect of each choice must change the logical and reasonable amount as a result of the actions taken by the choice.
+    Each choice should be long and detailed with explanation of the choice's action.
     You should consider previous conversation and user's choices to make the content and mention their effect on the beginning.
     Round content must start with explanation of user's previous choices and their effects if below Previous Choice Effect is not empty.
     Round content should be interesting and naturally connected to the previous conversation, with long and detailed explanation of the situation.
@@ -403,6 +404,7 @@ def generate_good_end(language, topic, user_persona, entire_story, previous_conv
     Please create good ending scenario based on previous conversation and entires story and user choices.
     Consider topic, content, user persona, entire story, and previous conversation to make the scenario.
     Good ending story should be interesting and naturally connected to the previous conversation.
+    Good ending should be last part which finishes the game story and make user happy.
     You should mention the reason of bad ending and make the story interesting.
     ---
     Context: {context}

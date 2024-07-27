@@ -66,18 +66,18 @@ def main():
     print("Changed Money: ", money)
     print("Choice Result: ", choice_result)
     
-    if life < 0:
+    if life <= 0:
       choice_result += f" 그 결과 생명 포인트가 {life}으로 떨어져 게임이 종료되었습니다"
-      bad_ending_scenario = cs.generate_bad_end(language, topic, user_persona, conversation, choice_result)
+      bad_ending_scenario = cs.generate_bad_end(language, topic, user_persona, conversation, choice_result)["response"]
       print("Bad Ending Scenario: ", bad_ending_scenario)
       return
-    if money < 0:
+    if money <= 0:
       choice_result += f" 그 결과 소지한 돈이 {money}으로 떨어져 게임이 종료되었습니다"
-      bad_ending_scenario = cs.generate_bad_end(language, topic, user_persona, conversation, choice_result)
+      bad_ending_scenario = cs.generate_bad_end(language, topic, user_persona, conversation, choice_result)["response"]
       print("Bad Ending Scenario: ", bad_ending_scenario)
       return
 
-  good_ending_scenario = cs.generate_good_end(language, topic, user_persona, entire_story, conversation)
+  good_ending_scenario = cs.generate_good_end(language, topic, user_persona, entire_story, conversation)["response"]
   print("Good Ending Scenario: ", good_ending_scenario)
   return
 
