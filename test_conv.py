@@ -41,6 +41,7 @@ def main():
   
   conversation = ""
   choice_result = ""
+  total_choices = ""
   life = 10
   money = 10
   for i in range(len(scenarios)):
@@ -57,8 +58,8 @@ def main():
     money_change = choice_effect["money"]
     life += life_change
     money += money_change
-    conversation = f"호스트: {game_result["round_content"]}\n플레이어: {game_result["user_choices"][choice_idx-1]}\n"
-    choice_result = f"생명 포인트가 {str(life_change)+" 증가했습니다" if life_change >= 0 else str(life_change*(-1))+" 감소했습니다"}, 돈: {str(money_change)+" 증가했습니다" if money_change >= 0 else str(money_change*(-1))+" 감소했습니다"}\n"
+    conversation += f"호스트: {game_result["round_content"]}\n플레이어: {game_result["user_choices"][choice_idx-1]}\n"
+    choice_result = f"생명 포인트가 {str(life_change)+" 증가했습니다." if life_change >= 0 else str(life_change*(-1))+" 감소했습니다."}, 돈: {str(money_change)+" 증가했습니다." if money_change >= 0 else str(money_change*(-1))+" 감소했습니다."}\n"
     
     print("Conversation: ", conversation)
     print("Changed Life: ", life)
@@ -66,14 +67,19 @@ def main():
     print("Choice Result: ", choice_result)
     
     if life < 0:
-      print("Game Over. Life is less than 0.") # Can be replaced by ending agent
-      break
+      choice_result += f" 그 결과 생명 포인트가 {life}으로 떨어져 게임이 종료되었습니다"
+      bad_ending_scenario = cs.generate_bad_end(language, topic, user_persona, conversation, choice_result)
+      print("Bad Ending Scenario: ", bad_ending_scenario)
+      return
     if money < 0:
-      print("Game Over. Money is less than 0.") # Can be replaced by ending agent
-      break
+      choice_result += f" 그 결과 소지한 돈이 {money}으로 떨어져 게임이 종료되었습니다"
+      bad_ending_scenario = cs.generate_bad_end(language, topic, user_persona, conversation, choice_result)
+      print("Bad Ending Scenario: ", bad_ending_scenario)
+      return
 
-
-  print("Great! You have finished the game successfully.") # Can be replaced by ending agent
+  good_ending_scenario = cs.generate_good_end(language, topic, user_persona, entire_story, conversation)
+  print("Good Ending Scenario: ", good_ending_scenario)
+  return
 
 if __name__ == "__main__":
   main()

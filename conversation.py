@@ -357,6 +357,75 @@ def play_game(topic, user_persona, language, entire_story, round_story, previous
       continue
 
 
+def generate_bad_end(language, topic, user_persona, previous_conversation, previous_choice_effect):
+  llm = ChatUpstage()
+  prompt_template = PromptTemplate.from_template(
+    """
+    Please answer in {language}.
+    You are best {topic} TRPG host, and user is playing game with you.
+    The detailed information about the fictional universe of game is included in context.
+    User played the game and reached the bad ending by previous choice.
+    Please create bad ending scenario based on previous conversation and previous choice's effect.
+    Consider topic, content, user persona, previous conversation and previous choice's effect to make the scenario.
+    Bad ending story should be interesting and naturally connected to the previous conversation.
+    You should mention the reason of bad ending and make the story interesting.
+    ---
+    Context: {context}
+    ---
+    User Persona: {user_persona}
+    ---
+    Previous Conversation: {previous_conversation}
+    ---
+    Previous Choice Effect: {previous_choice_effect}
+    ---
+    Bad Ending Scenario:
+    """
+  )
+  chain = prompt_template | llm | StrOutputParser()
+  # context = get_context(f"What is related information about {user_choice}?")
+  context = ""
+
+  response = chain.invoke({ "language": language, "topic": topic, "context": context, "user_persona": user_persona, "previous_conversation": previous_conversation, "previous_choice_effect": previous_choice_effect })
+
+  return {
+    "response": response,
+  }
+
+
+def generate_good_end(language, topic, user_persona, entire_story, previous_conversation):
+  llm = ChatUpstage()
+  prompt_template = PromptTemplate.from_template(
+    """
+    Please answer in {language}.
+    You are best {topic} TRPG host, and user is playing game with you.
+    The detailed information about the fictional universe of game is included in context.
+    User played the game and reached the entire story's ending which means game win, so it's good ending.
+    Please create good ending scenario based on previous conversation and entires story and user choices.
+    Consider topic, content, user persona, entire story, and previous conversation to make the scenario.
+    Good ending story should be interesting and naturally connected to the previous conversation.
+    You should mention the reason of bad ending and make the story interesting.
+    ---
+    Context: {context}
+    ---
+    User Persona: {user_persona}
+    ---
+    Entire Story: {entire_story}
+    ---
+    Previous Conversation: {previous_conversation}
+    ---
+    Good Ending Scenario:
+    """
+  )
+  chain = prompt_template | llm | StrOutputParser()
+  # context = get_context(f"What is related information about {user_choice}?")
+  context = ""
+
+  response = chain.invoke({ "language": language, "topic": topic, "context": context, "user_persona": user_persona, "entire_story": entire_story, "previous_conversation": previous_conversation })
+
+  return {
+    "response": response,
+  }
+
 def convert_to_image_prompt(topic, user_persona, host_message):
   llm = ChatUpstage()
   prompt_template = PromptTemplate.from_template(
