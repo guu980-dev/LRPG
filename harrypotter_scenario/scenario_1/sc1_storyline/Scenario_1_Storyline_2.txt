@@ -1,0 +1,12 @@
+Storyline 2: Dark Wizard Ambush
+Mission: Protect a group of unicorns from a dark wizard attack.
+Steps:
+1. Use "Homenum Revelio" to locate the dark wizard.
+2. Engage in a duel with the dark wizard using defensive and offensive spells.
+3. Create a magical barrier to protect the unicorns.
+4. Drive the dark wizard out of the forest.
+
+Conditions for Clearing:
+- Successfully locate the dark wizard.
+- Win the duel without the unicorns being harmed.
+- Maintain the magical barrier until the threat is eliminated.

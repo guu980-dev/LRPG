@@ -1,0 +1,7 @@
+Scenario 3: The Triwizard Tournament - Dragon Challenge
+Mission: Retrieve a golden egg from a dragon's nest during the Triwizard Tournament.
+Situation: The player must face a fierce dragon guarding its nest.
+Conditions for Clearing: 
+1. Evade the dragon's attacks and distractions.
+2. Successfully retrieve the golden egg.
+3. Return to the starting point without being severely injured.

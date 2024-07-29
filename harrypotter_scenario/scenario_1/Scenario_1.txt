@@ -1,0 +1,7 @@
+Scenario 1: The Forbidden Forest Encounter
+Mission: Explore the Forbidden Forest and rescue a unicorn from a dark creature.
+Situation: The player must navigate through the dense, magical forest, facing challenges like enchanted plants and dangerous creatures.
+Conditions for Clearing: 
+1. Successfully track the unicorn's trail.
+2. Defeat the dark creature (a giant spider or a dark wizard).
+3. Safely escort the unicorn back to the edge of the forest.
