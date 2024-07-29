@@ -18,3 +18,7 @@ def to_round_result(round_effect_dict, round_result_explanation):
       round_effect_str += f"{key} is decreased by {value*(-1)}. "
   
   return round_effect_str + round_result_explanation
+
+
+def player_profile_to_str(player_profile_dict):
+  return '\n' + '\n'.join([f"{key}: {value}" for key, value in player_profile_dict.items()])
