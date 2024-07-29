@@ -1,6 +1,6 @@
 from langchain_upstage import ChatUpstage
 from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 import ast, json
 import formatter
 import config
@@ -36,7 +36,7 @@ import config
     # Round Description:
     # """
     
-def create_initial_conversation(world_summary, player_profile, player_status, entire_story):
+def create_initial_conversation(world_summary, player_profile, player_restriction, player_capability, entire_story):
   llm = ChatUpstage()
   prompt_template = PromptTemplate.from_template(
     """
@@ -45,7 +45,7 @@ def create_initial_conversation(world_summary, player_profile, player_status, en
     The detailed information about the fictional universe of game is included in below Fictional Universe part.
     Please explain the initial introduction which includes the greeting message as a game master and explanation of the universe and situation to make player understand the context.
     Introduction should include brief explanation of the story before the first round begins, but do not include the spoiler of the detailed entire story.
-    Introduction should include explanation of the player's profile and status to make player understand the context.
+    Introduction should include explanation of the player's profile, restriction, and capability to make player understand the context.
     Introduction should include background knowledge of the fictional universe to make player understand the situation.
     Introduction should be wrote in the tone of the game master.
     ---
@@ -53,7 +53,9 @@ def create_initial_conversation(world_summary, player_profile, player_status, en
     ---
     Player Profile: {player_profile}
     ---
-    Player Status: {player_status}
+    Player Restriction: {player_restriction}
+    ---
+    Player Capability: {player_capability}
     ---
     Entire Story: {entire_story}
     ---
@@ -61,12 +63,12 @@ def create_initial_conversation(world_summary, player_profile, player_status, en
     """
   )
   chain = prompt_template | llm | StrOutputParser()
-  introduction = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_status": player_status, "entire_story": entire_story })
+  introduction = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_restriction": player_restriction, "player_capability": player_capability, "entire_story": entire_story })
   return introduction
 
 
     
-def create_round_description(world_summary, player_profile, player_status, entire_story, round_story, previous_conversation, previous_round_result):
+def create_round_description(world_summary, player_profile, player_restriction, player_capability, entire_story, round_story, previous_conversation, previous_round_result):
   llm = ChatUpstage()
   prompt_template = PromptTemplate.from_template(
     """
@@ -76,18 +78,19 @@ def create_round_description(world_summary, player_profile, player_status, entir
     Please create round description which will be displayed to player that can explain this round story to make player understand the situation.
     Round Description should include the main event of this round story.
     Round Description should be finished with the question to player to make a decision for the next step.
-    Round Description should consider this round story, entire story, player profile, player status, previous conversation, and previous round effect.
+    Round Description should consider this round story, entire story, player profile, player restriction, player capability, previous conversation, and previous round effect.
     Round Description should be interesting and naturally connected to the previous conversation, with long and detailed explanation of story.
     Round Description should be wrote in the tone of the game master.
     Round Description must start with explanation of player's previous round result and reason if below Previous Round Result section is not empty.
     Round Description should reflect the player's previous choices and their effects on this round story, so it can include slightly different from this round story but follow the entire story in big picture.
-    Round Description should not give fixed choice with number.
     ---
     Fictional Universe: {world_summary}
     ---
     Player Profile: {player_profile}
     ---
-    Player Status: {player_status}
+    Player Restriction: {player_restriction}
+    ---
+    Player Capability: {player_capability}
     ---
     Entire Story: {entire_story}
     ---
@@ -101,11 +104,82 @@ def create_round_description(world_summary, player_profile, player_status, entir
     """
   )
   chain = prompt_template | llm | StrOutputParser()
-  round_description = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_status": player_status, "entire_story": entire_story, "round_story": round_story, "previous_conversation": previous_conversation, "previous_round_result": previous_round_result })
-  return round_description
+  while(True):
+    round_description = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_restriction": player_restriction, "player_capability": player_capability, "entire_story": entire_story, "round_story": round_story, "previous_conversation": previous_conversation, "previous_round_result": previous_round_result })
+    if "1." in round_description and '2.' in round_description:
+      continue
+    
+    return round_description
 
 
-def create_round_result(world_summary, player_profile, player_status, round_description, player_response):
+# def get_related_parameter(world_summary, player_profile, player_restriction, player_capability, round_description, player_response):
+#   llm = ChatUpstage()
+#   prompt_template = PromptTemplate.from_template(
+#     """
+#     Please answer in korean.
+#     You are best TRPG game master, and user is playing the game as a player with your guidance.
+#     The detailed information about the fictional universe of game is included in below Fictional Universe part.
+#     This round story is included in This Round Description part.
+#     Please select the required player capability to successfully conduct the player's response action.
+#     Required Capability should be selected from player capability elements.
+#     Please create the effect from player's response from this round story, and reason to explain the effect.
+#     Effect should be calculated based on player response, player restriction, player capability, player profile, and round description.
+#     Effect should reduce or increase player restriction in range between (-10, 10) with reasonable amount from player response's action.
+#     Effect should reduce or increase player capability in range between (-20, 20) with reasonable amount from player response's action if it seems to be change by player's action.
+#     Effect can be unexpected or different from player's intention to make the game more interesting.
+#     When unexpected effect is happened, reason should explain why the effect is happened based on player restriction, capability, and profile.
+#     Reason should explain why the effect is happened based on player response and round description.
+#     Reason should logically explain the amount of changes of player restriction and capability.
+#     Reason should be wrote in the tone of the game master.
+#     Response should follow below format which is python dictionary consist of effect and reason.
+#     ---
+#     Fictional Universe: {world_summary}
+#     ---
+#     Player Profile: {player_profile}
+#     ---
+#     Player Restriction: {player_restriction}
+#     ---
+#     Player Capability: {player_capability}
+#     ---
+#     Round Description: {round_description}
+#     ---
+#     Player Response: {player_response}
+#     ---
+#     format:
+#     {{
+#       effect: {{
+#         player_restriction: {{
+#           life: integer of life amount change between (-10, 10),
+#           money: integer of money amount change between (-10, 10)
+#         }},
+#         player_capability: {{
+#           stamina: integer of stamina amount change between (-20, 20),
+#           intelligence: integer of intelligence amount change between (-20, 20),
+#           combat_power: integer of combat power amount change between (-20, 20),
+#           agility: integer of agility amount change between (-20, 20),
+#         }}
+#       }}
+#       reason: "reason of the effect which is changes of player status based on player response and round description",
+#     }}
+#     ---
+#     """
+#   )
+#   chain = prompt_template | llm | StrOutputParser()
+  
+#   while(True):
+#     try:
+#       response = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_restriction": player_restriction, "player_capability": player_capability, "round_description": round_description, "player_response": player_response })
+#       response_dict = json.loads(response)
+      
+#       if response_dict.get('effect').get('player_restriction') == None or response_dict.get("reason").get('player_capability') == None:
+#         raise Exception()
+
+#       return response_dict
+#     except:
+#       continue
+
+
+def create_round_result(world_summary, player_profile, player_restriction, player_capability, round_description, player_response):
   llm = ChatUpstage()
   prompt_template = PromptTemplate.from_template(
     """
@@ -114,12 +188,13 @@ def create_round_result(world_summary, player_profile, player_status, round_desc
     The detailed information about the fictional universe of game is included in below Fictional Universe part.
     This round story is included in This Round Description part.
     Please create the effect from player's response from this round story, and reason to explain the effect.
-    Effect should be calculated based on player response, player status, player profile, and round description.
-    Effect should reduce or increase player status in range between (-10, 10) with reasonable amount from player response's action.
-    Effect can be unexpected or different from player's intention to make the game more interesting.
-    When unexpected effect is happened, reason should explain why the effect is happened based on player status and profile.
+    Effect should be calculated based on player response, player restriction, player capability, player profile, and round description.
+    Effect should reduce or increase player restriction in range between (-10, 10) with reasonable amount from player response's action.
+    Effect should reduce or increase player capability in range between (-20, 20) with reasonable amount from player response's action if it seems to be change by player's action.
+    Effect can be unexpected or different from player's intention to make the game more interesting, and it should consider the player's capability is enough to conduct the action whose range is between (0, 100), the larger the value, the stronger the capability.
+    When unexpected result is happened, reason should explain why this kind of unintended effect is happened based on player restriction, capability, and profile.
     Reason should explain why the effect is happened based on player response and round description.
-    Reason should logically explain the amount of changes of player status.
+    Reason should logically explain the amount of changes of player restriction and capability.
     Reason should be wrote in the tone of the game master.
     Response should follow below format which is python dictionary consist of effect and reason.
     ---
@@ -127,7 +202,9 @@ def create_round_result(world_summary, player_profile, player_status, round_desc
     ---
     Player Profile: {player_profile}
     ---
-    Player Status: {player_status}
+    Player Restriction: {player_restriction}
+    ---
+    Player Capability: {player_capability}
     ---
     Round Description: {round_description}
     ---
@@ -136,34 +213,38 @@ def create_round_result(world_summary, player_profile, player_status, round_desc
     format:
     {{
       effect: {{
-        life: integer of life amount change,
-        money: integer of money amount change,
-        stamina: integer of stamina amount change,
-        intelligence: integer of intelligence amount change,
-        combat_power: integer of combat power amount change,
-        agility: integer of agility amount change,
+        player_restriction: {{
+          life: integer of life amount change between (-10, 10),
+          money: integer of money amount change between (-10, 10)
+        }},
+        player_capability: {{
+          stamina: integer of stamina amount change between (-20, 20),
+          intelligence: integer of intelligence amount change between (-20, 20),
+          combat_power: integer of combat power amount change between (-20, 20),
+          agility: integer of agility amount change between (-20, 20),
+        }}
       }}
-      reason: "reason of the effect which is changes of player status based on player response and round description",
+      reason: "reason of the effect which is changes of player restriction, and capability based on player response and round description",
     }}
     ---
     """
   )
-  chain = prompt_template | llm | StrOutputParser()
+  chain = prompt_template | llm | JsonOutputParser()
   
   while(True):
     try:
-      response = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_status": player_status, "round_description": round_description, "player_response": player_response })
-      response_dict = json.loads(response)
+      response = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_restriction": player_restriction, "player_capability": player_capability, "round_description": round_description, "player_response": player_response })
+      # response_dict = json.loads(response)
       
-      if response_dict.get('effect') == None or response_dict.get("reason") == None:
+      if response.get('effect').get('player_restriction') == None or response.get("effect").get('player_capability') == None or response.get("reason") == None:
         raise Exception()
 
-      return response_dict
+      return response
     except:
       continue
 
 
-def create_bad_ending(world_summary, player_profile, player_status, entire_story, round_story, previous_conversation, round_result):
+def create_bad_ending(world_summary, player_profile, player_restriction, player_capability, entire_story, round_story, previous_conversation, round_result):
   llm = ChatUpstage()
   prompt_template = PromptTemplate.from_template(
     """
@@ -171,19 +252,21 @@ def create_bad_ending(world_summary, player_profile, player_status, entire_story
     You are best TRPG game master, and user is playing the game as a player with your guidance.
     The detailed information about the fictional universe of game is included in below Fictional Universe part.
     Player played the game and reached the bad ending by previous decisions.
-    Player reach bad ending when player status life or money is less or equal to 0.
+    Player reach bad ending when player restriction (life or money) is less or equal to 0.
     Please create bad ending scenario based on previous conversation and previous round's result.
-    Consider fictional universe, player profile, player status, entire story, this round story, this round result, and previous conversation.
+    Consider fictional universe, player profile, player restriction, player capability, entire story, this round story, this round result, and previous conversation.
     Bad ending story should be interesting and naturally connected to the previous conversation.
     Bad ending should be wrote in the tone of the game master.
     Bad ending should mention the reason in story why player reached the bad ending and make the story interesting.
-    Bad ending should mention the exact reason by telling player's status change.
+    Bad ending should mention the exact reason by telling player's restriction change.
     ---
     Fictional Universe: {world_summary}
     ---
     Player Profile: {player_profile}
     ---
-    Player Status: {player_status}
+    Player Restriction: {player_restriction}
+    ---
+    Player Capability: {player_capability}
     ---
     Entire Story: {entire_story}
     ---
@@ -197,12 +280,12 @@ def create_bad_ending(world_summary, player_profile, player_status, entire_story
     """
   )
   chain = prompt_template | llm | StrOutputParser()
-  bad_ending = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_status": player_status, "entire_story": entire_story, "round_story": round_story, "round_result": round_result, "previous_conversation": previous_conversation })
+  bad_ending = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_restriction": player_restriction, "player_capability": player_capability, "entire_story": entire_story, "round_story": round_story, "round_result": round_result, "previous_conversation": previous_conversation })
 
   return bad_ending
 
 
-def create_good_ending(world_summary, player_profile, player_status, entire_story, previous_conversation):
+def create_good_ending(world_summary, player_profile, player_restriction, player_capability, entire_story, previous_conversation):
   llm = ChatUpstage()
   prompt_template = PromptTemplate.from_template(
     """
@@ -211,9 +294,7 @@ def create_good_ending(world_summary, player_profile, player_status, entire_stor
     The detailed information about the fictional universe of game is included in below Fictional Universe part.
     User played the game and reached the entire story's ending which means game win, so it's good ending.
     Please create good ending scenario based on previous conversation and entires story.
-    
-    Consider topic, content, user persona, entire story, and previous conversation to make the scenario.
-    
+    Consider fictional universe, player profile, player restriction, player capability, entire story, and previous conversation.
     Good ending should be appropriate for the end of the story, which comprehensively organizes the entire story flow and the user's decisions.
     Good ending story should be interesting and naturally connected to the previous conversation.
     Good ending should be last part which finishes the game story and make user happy.
@@ -223,7 +304,9 @@ def create_good_ending(world_summary, player_profile, player_status, entire_stor
     ---
     Player Profile: {player_profile}
     ---
-    Player Status: {player_status}
+    Player Restriction: {player_restriction}
+    ---
+    Player Capability: {player_capability}
     ---
     Entire Story: {entire_story}
     ---
@@ -233,7 +316,7 @@ def create_good_ending(world_summary, player_profile, player_status, entire_stor
     """
   )
   chain = prompt_template | llm | StrOutputParser()
-  good_ending = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_status": player_status, "entire_story": entire_story, "previous_conversation": previous_conversation })
+  good_ending = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_restriction": player_restriction, "player_capability": player_capability, "entire_story": entire_story, "previous_conversation": previous_conversation })
 
   return good_ending
 
@@ -243,15 +326,17 @@ def play_game(game_scenario, world_summary, player_profile):
   conversation = ""
   previous_conversation = ""
   previous_round_result = ""
-  player_status = { "life": 10, "money": 10, **player_profile["params"] }
+  player_restriction = { "life": 10, "money": 10 }
+  player_capability = player_profile["params"]
+  # player_status = { "life": 10, "money": 10, **player_profile["params"] }
   player_profile_str = formatter.player_profile_to_str(player_profile)
-  introduction = create_initial_conversation(world_summary, player_profile_str, player_status, entire_story)
+  introduction = create_initial_conversation(world_summary, player_profile_str, player_restriction, player_capability, entire_story)
   print(introduction)
   print('-----------------------------\n')
   for round_idx, round_scenario in enumerate(game_scenario):
     # Display this round story
     round_story = f"{round_idx+1}. {round_scenario["title"]}: {round_scenario["story"]}\n"
-    round_description = create_round_description(world_summary, player_profile_str, player_status, entire_story, round_story, previous_conversation, previous_round_result)
+    round_description = create_round_description(world_summary, player_profile_str, player_restriction, player_capability, entire_story, round_story, previous_conversation, previous_round_result)
     print(f"Round {round_idx+1}: {round_description}")
 
     # Get player's response
@@ -259,27 +344,43 @@ def play_game(game_scenario, world_summary, player_profile):
     conversation += f"Game Master: {round_description}\nPlayer: {player_response}\n"
 
     # Reflect the result and update player status
-    round_result = create_round_result(world_summary, player_profile_str, player_status, round_description, player_response)
+    round_result = create_round_result(world_summary, player_profile_str, player_restriction, player_capability, round_description, player_response)
     round_effect = round_result["effect"]
     round_result_explanation = round_result["reason"]  
-    for key, value in round_effect.items():
-      if player_status.get(key) is not None:
-        player_status[key] += value
+    for key, value in round_effect["player_restriction"].items():
+      if player_restriction.get(key) is not None:
+        modified_value = player_restriction[key] + value
+        if modified_value > 10:
+          player_restriction[key] = 10
+        elif modified_value < -10:
+          player_restriction[key] = -10
+        else:
+          player_restriction[key] = modified_value
+
+    for key, value in round_effect["player_capability"].items():
+      if player_capability.get(key) is not None:
+        modified_value = player_capability[key] + value
+        if modified_value > 100:
+          player_capability[key] = 100
+        elif modified_value < -100:
+          player_capability[key] = -100
+        else:
+          player_capability[key] = modified_value
 
     # Update previous conversation and round effect
     previous_conversation = conversation
     previous_round_result = formatter.to_round_result(round_effect, round_result_explanation)
 
     # Check whether player lose the game
-    if player_status["life"] <= 0 or player_status["money"] <= 0:
-      bad_ending = create_bad_ending(world_summary, player_profile_str, player_status, entire_story, round_story, previous_conversation, previous_round_result)
+    if player_restriction["life"] <= 0 or player_restriction["money"] <= 0:
+      bad_ending = create_bad_ending(world_summary, player_profile_str, player_restriction, player_capability, entire_story, round_story, previous_conversation, previous_round_result)
       print(bad_ending)
       return
 
 
 
   # Reach the good ending of the game
-  good_ending = create_good_ending(world_summary, player_profile_str, player_status, entire_story, previous_conversation)
+  good_ending = create_good_ending(world_summary, player_profile_str, player_restriction, player_capability, entire_story, previous_conversation)
   print(good_ending)
   return
 
