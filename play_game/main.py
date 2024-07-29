@@ -3,7 +3,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 import ast, json
 import formatter
-import config
+import config, random
 
 
     # """
@@ -112,74 +112,48 @@ def create_round_description(world_summary, player_profile, player_restriction, 
     return round_description
 
 
-# def get_related_parameter(world_summary, player_profile, player_restriction, player_capability, round_description, player_response):
-#   llm = ChatUpstage()
-#   prompt_template = PromptTemplate.from_template(
-#     """
-#     Please answer in korean.
-#     You are best TRPG game master, and user is playing the game as a player with your guidance.
-#     The detailed information about the fictional universe of game is included in below Fictional Universe part.
-#     This round story is included in This Round Description part.
-#     Please select the required player capability to successfully conduct the player's response action.
-#     Required Capability should be selected from player capability elements.
-#     Please create the effect from player's response from this round story, and reason to explain the effect.
-#     Effect should be calculated based on player response, player restriction, player capability, player profile, and round description.
-#     Effect should reduce or increase player restriction in range between (-10, 10) with reasonable amount from player response's action.
-#     Effect should reduce or increase player capability in range between (-20, 20) with reasonable amount from player response's action if it seems to be change by player's action.
-#     Effect can be unexpected or different from player's intention to make the game more interesting.
-#     When unexpected effect is happened, reason should explain why the effect is happened based on player restriction, capability, and profile.
-#     Reason should explain why the effect is happened based on player response and round description.
-#     Reason should logically explain the amount of changes of player restriction and capability.
-#     Reason should be wrote in the tone of the game master.
-#     Response should follow below format which is python dictionary consist of effect and reason.
-#     ---
-#     Fictional Universe: {world_summary}
-#     ---
-#     Player Profile: {player_profile}
-#     ---
-#     Player Restriction: {player_restriction}
-#     ---
-#     Player Capability: {player_capability}
-#     ---
-#     Round Description: {round_description}
-#     ---
-#     Player Response: {player_response}
-#     ---
-#     format:
-#     {{
-#       effect: {{
-#         player_restriction: {{
-#           life: integer of life amount change between (-10, 10),
-#           money: integer of money amount change between (-10, 10)
-#         }},
-#         player_capability: {{
-#           stamina: integer of stamina amount change between (-20, 20),
-#           intelligence: integer of intelligence amount change between (-20, 20),
-#           combat_power: integer of combat power amount change between (-20, 20),
-#           agility: integer of agility amount change between (-20, 20),
-#         }}
-#       }}
-#       reason: "reason of the effect which is changes of player status based on player response and round description",
-#     }}
-#     ---
-#     """
-#   )
-#   chain = prompt_template | llm | StrOutputParser()
+def get_required_capabilities(world_summary, player_profile, player_restriction, player_capability, round_description, player_response):
+  llm = ChatUpstage()
+  prompt_template = PromptTemplate.from_template(
+    """
+    Please answer in english.
+    You are best TRPG game master, and user is playing the game as a player with your guidance.
+    The detailed information about the fictional universe of game is included in below Fictional Universe part.
+    This round story is included in This Round Description part.
+    Please select the required player capability to successfully conduct the player's response action.
+    Required Capability should be selected from player capability elements.
+    Required Capability should be selected based on player response and round description.
+    Response should be python list format consists of string which is keys of required player capability.
+    ---
+    Fictional Universe: {world_summary}
+    ---
+    Player Profile: {player_profile}
+    ---
+    Player Restriction: {player_restriction}
+    ---
+    Player Capability: {player_capability}
+    ---
+    Round Description: {round_description}
+    ---
+    Player Response: {player_response}
+    ---
+    Required Capability: ["Required capabilities on english", ...]
+    """
+  )
+  chain = prompt_template | llm | StrOutputParser()
   
-#   while(True):
-#     try:
-#       response = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_restriction": player_restriction, "player_capability": player_capability, "round_description": round_description, "player_response": player_response })
-#       response_dict = json.loads(response)
-      
-#       if response_dict.get('effect').get('player_restriction') == None or response_dict.get("reason").get('player_capability') == None:
-#         raise Exception()
-
-#       return response_dict
-#     except:
-#       continue
+  while(True):
+    try:
+      response = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_restriction": player_restriction, "player_capability": player_capability, "round_description": round_description, "player_response": player_response })
+      response = '[' + response.split('[')[-1]
+      response_list = ast.literal_eval(response)
+      if len(response_list) != 0:
+        return response_list
+    except:
+      continue
 
 
-def create_round_result(world_summary, player_profile, player_restriction, player_capability, round_description, player_response):
+def get_expected_result(world_summary, player_profile, player_restriction, player_capability, round_description, player_response):
   llm = ChatUpstage()
   prompt_template = PromptTemplate.from_template(
     """
@@ -191,8 +165,6 @@ def create_round_result(world_summary, player_profile, player_restriction, playe
     Effect should be calculated based on player response, player restriction, player capability, player profile, and round description.
     Effect should reduce or increase player restriction in range between (-10, 10) with reasonable amount from player response's action.
     Effect should reduce or increase player capability in range between (-20, 20) with reasonable amount from player response's action if it seems to be change by player's action.
-    Effect can be unexpected or different from player's intention to make the game more interesting, and it should consider the player's capability is enough to conduct the action whose range is between (0, 100), the larger the value, the stronger the capability.
-    When unexpected result is happened, reason should explain why this kind of unintended effect is happened based on player restriction, capability, and profile.
     Reason should explain why the effect is happened based on player response and round description.
     Reason should logically explain the amount of changes of player restriction and capability.
     Reason should be wrote in the tone of the game master.
@@ -242,6 +214,87 @@ def create_round_result(world_summary, player_profile, player_restriction, playe
       return response
     except:
       continue
+
+
+def get_unexpected_result(world_summary, player_profile, player_restriction, player_capability, not_enough_capability, round_description, player_response):
+  llm = ChatUpstage()
+  prompt_template = PromptTemplate.from_template(
+    """
+    Please answer in korean.
+    You are best TRPG game master, and user is playing the game as a player with your guidance.
+    The detailed information about the fictional universe of game is included in below Fictional Universe part.
+    This round story is included in This Round Description part.
+    Please create the unexpected effect from player's response from this round story, and reason to explain the effect.
+    Player's response is failed to do intended action because some player's capability is not enough to conduct the action.
+    Not enough capability is included in Required Capability part.
+    Effect should be calculated based on player response, player restriction, player capability, player profile, and round description.
+    Effect should reduce or increase player restriction in range between (-10, 10) with reasonable amount from player response's action failure.
+    Effect should reduce or increase player capability in range between (-20, 20) with reasonable amount from player response's action failure if it seems to be change by player's action failure.
+    Reason should explain why this kind of unintended effect is happened based on situation.
+    Reason should logically explain the amount of changes of player restriction and capability.
+    Reason should be wrote in the tone of the game master.
+    Response should follow below format which is python dictionary consist of effect and reason.
+    ---
+    Fictional Universe: {world_summary}
+    ---
+    Player Profile: {player_profile}
+    ---
+    Player Restriction: {player_restriction}
+    ---
+    Player Capability: {player_capability}
+    ---
+    Required Capability: {not_enough_capability}
+    ---
+    Round Description: {round_description}
+    ---
+    Player Response: {player_response}
+    ---
+    format:
+    {{
+      effect: {{
+        player_restriction: {{
+          life: integer of life amount change between (-10, 10),
+          money: integer of money amount change between (-10, 10)
+        }},
+        player_capability: {{
+          stamina: integer of stamina amount change between (-20, 20),
+          intelligence: integer of intelligence amount change between (-20, 20),
+          combat_power: integer of combat power amount change between (-20, 20),
+          agility: integer of agility amount change between (-20, 20),
+        }}
+      }}
+      reason: "reason of the effect which is changes of player restriction, and capability based on player response's failure and round description",
+    }}
+    ---
+    """
+  )
+  chain = prompt_template | llm | JsonOutputParser()
+  
+  while(True):
+    try:
+      response = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_restriction": player_restriction, "player_capability": player_capability, "not_enough_capability": not_enough_capability, "round_description": round_description, "player_response": player_response })
+      # response_dict = json.loads(response)
+      
+      if response.get('effect').get('player_restriction') == None or response.get("effect").get('player_capability') == None or response.get("reason") == None:
+        raise Exception()
+
+      return response
+    except:
+      continue
+
+
+def create_round_result(world_summary, player_profile, player_restriction, player_capability, round_description, player_response):
+  required_caps = get_required_capabilities(world_summary, player_profile, player_restriction, player_capability, round_description, player_response)
+  for cap in required_caps:
+    if random.random() > player_capability[cap]/100:
+      # Failed to do intended action
+      return get_unexpected_result(world_summary, player_profile, player_restriction, player_capability, required_caps, round_description, player_response)
+  
+  # Success to do intended action
+  return get_expected_result(world_summary, player_profile, player_restriction, player_capability, round_description, player_response)
+  
+  
+
 
 
 def create_bad_ending(world_summary, player_profile, player_restriction, player_capability, entire_story, round_story, previous_conversation, round_result):
@@ -370,6 +423,8 @@ def play_game(game_scenario, world_summary, player_profile):
     # Update previous conversation and round effect
     previous_conversation = conversation
     previous_round_result = formatter.to_round_result(round_effect, round_result_explanation)
+
+    print('-----------------------------\n')
 
     # Check whether player lose the game
     if player_restriction["life"] <= 0 or player_restriction["money"] <= 0:
