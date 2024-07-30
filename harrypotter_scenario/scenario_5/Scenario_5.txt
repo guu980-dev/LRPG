@@ -1,0 +1,7 @@
+Scenario 5: The Final Battle at Hogwarts
+Mission: Defend Hogwarts from Voldemort and his forces during the final battle.
+Situation: The player must participate in the defense of the castle, aiding allies and fighting enemies.
+Conditions for Clearing: 
+1. Successfully defend key areas of Hogwarts (e.g., the Great Hall, the bridge).
+2. Defeat major Death Eaters (e.g., Bellatrix Lestrange, Fenrir Greyback).
+3. Assist in the final confrontation with Voldemort, ensuring his defeat.

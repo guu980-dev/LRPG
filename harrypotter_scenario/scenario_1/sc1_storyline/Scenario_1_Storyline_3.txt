@@ -1,0 +1,12 @@
+Storyline 3: Enchanted Plants Obstacle
+Mission: Navigate through a section of the forest filled with dangerous enchanted plants to rescue a trapped unicorn.
+Steps:
+1. Identify and avoid poisonous plants using "Herbivicus."
+2. Use "Diffindo" to cut through thick vines and obstacles.
+3. Find the trapped unicorn entangled in Devil's Snare.
+4. Use "Lumos Solem" to free the unicorn from the Devil's Snare.
+
+Conditions for Clearing:
+- Successfully navigate through the enchanted plants.
+- Avoid being poisoned or trapped by the plants.
+- Free the unicorn and guide it back to safety.
