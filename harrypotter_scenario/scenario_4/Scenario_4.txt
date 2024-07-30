@@ -1,0 +1,7 @@
+Scenario 4: The Department of Mysteries Battle
+Mission: Retrieve a prophecy from the Department of Mysteries while fighting off Death Eaters.
+Situation: The player must navigate the maze-like Department of Mysteries and engage in combat with enemy wizards.
+Conditions for Clearing: 
+1. Locate the correct prophecy.
+2. Defeat the Death Eaters encountered.
+3. Escape the Department of Mysteries with the prophecy intact.

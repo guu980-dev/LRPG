@@ -1,0 +1,7 @@
+Scenario 2: The Chamber of Secrets
+Mission: Discover the entrance to the Chamber of Secrets and defeat the monster within.
+Situation: The player must solve puzzles to find the entrance and navigate the labyrinthine chamber.
+Conditions for Clearing: 
+1. Solve the riddles to find the entrance.
+2. Defeat the basilisk using the Sword of Gryffindor or other means.
+3. Escape the collapsing chamber safely.
