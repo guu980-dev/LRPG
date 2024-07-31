@@ -1,9 +1,9 @@
 from langchain_upstage import ChatUpstage
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
-import ast, json
-import formatter
-import config, random
+import ast
+from . import formatter
+import random
 
 
     # """

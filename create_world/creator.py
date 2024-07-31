@@ -1,5 +1,5 @@
-from generator import generate_chain
-from utils import load_yaml, load_txt
+from .generator import generate_chain
+from .utils import load_yaml, load_txt
 
 from langchain_core.output_parsers import JsonOutputParser
 
