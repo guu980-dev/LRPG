@@ -1,37 +1,32 @@
-# llm-dnd 
+# lRPG (LLM RPG)
 
-### Installation
+This project is working in process.
 
-**Prerequisite**: Gradio requires [Python 3.8 or higher](https://www.python.org/downloads/)
+### Introduction
+
+You can enjoy your own rpg on your own world. You can make any decision, then llm game master will handle them. It will support other world and custom world features asap.
+
+This demo version can be played in shell, and we will adopt UI as soon as possible.
+
+Demo version is playing on harry potter fictional universe.
 
 
-We recommend installing Gradio using `pip`, which is included by default in Python. Run this in your terminal or command prompt:
+## 1. Structure  
+
+Consist of
+1. World Preparation
+2. Character Preparation
+3. Game Play
+
+## 2. Stack
+
+1. Solar
+2. Graph db (WIP)
+
+### 3. How to play
+
+clone this repository and execute main file.
 
 ```
-pip install gradio
+python main.py
 ```
-   
-## 1. Spec   
-- 
-   
-## 2. 구조   
-
-
-### 1. 기본구조   
-```
-├── channel
-### 2. 
-
-```
-
-## 기타
-test
-#### 1. test   
-```
-
-- 주의사항
-```python 
-dkflsjkdfjlksjflkjdlk
-test code
-```
-
