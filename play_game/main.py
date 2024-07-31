@@ -121,7 +121,7 @@ def get_required_capabilities(world_summary, player_profile, player_restriction,
     The detailed information about the fictional universe of game is included in below Fictional Universe part.
     This round story is included in This Round Description part.
     Please select the required player capability to successfully conduct the player's response action.
-    Required Capability should be selected from player capability elements.
+    Required Capability should be selected from player capability.
     Required Capability should be selected based on player response and round description.
     Response should be python list format consists of string which is keys of required player capability.
     ---
@@ -286,7 +286,8 @@ def get_unexpected_result(world_summary, player_profile, player_restriction, pla
 def create_round_result(world_summary, player_profile, player_restriction, player_capability, round_description, player_response):
   required_caps = get_required_capabilities(world_summary, player_profile, player_restriction, player_capability, round_description, player_response)
   for cap in required_caps:
-    if random.random() > player_capability[cap]/100:
+    required_cap = player_capability.get(cap)
+    if required_cap and random.random() > required_cap/100:
       # Failed to do intended action
       return get_unexpected_result(world_summary, player_profile, player_restriction, player_capability, required_caps, round_description, player_response)
   
@@ -385,7 +386,7 @@ def play_game(game_scenario, world_summary, player_profile):
   player_profile_str = formatter.player_profile_to_str(player_profile)
   introduction = create_initial_conversation(world_summary, player_profile_str, player_restriction, player_capability, entire_story)
   print(introduction)
-  print('-----------------------------\n')
+  print('-----------------------------')
   for round_idx, round_scenario in enumerate(game_scenario):
     # Display this round story
     round_story = f"{round_idx+1}. {round_scenario["title"]}: {round_scenario["story"]}\n"
@@ -424,7 +425,7 @@ def play_game(game_scenario, world_summary, player_profile):
     previous_conversation = conversation
     previous_round_result = formatter.to_round_result(round_effect, round_result_explanation)
 
-    print('-----------------------------\n')
+    print('-----------------------------')
 
     # Check whether player lose the game
     if player_restriction["life"] <= 0 or player_restriction["money"] <= 0:

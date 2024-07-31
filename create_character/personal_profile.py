@@ -1,5 +1,4 @@
-import re
-import json
+import re, json, ast
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_upstage import ChatUpstage
@@ -10,27 +9,34 @@ def generate_character_creation_questions(world_summary, language="korean"):
         """
         Based on the following novel context, generate five simple questions that a player should answer to help create a deeply personalized character for a fantasy RPG.
         The questions should explore different aspects of a potential character’s personality, background, and capabilities.
-        For users who are not used to the story I want you to give several choices in the question
-
-        Write five questions in {Language}
-
-       **Output should strictly follow this format:**
-
-        - Question1 (example: )
-        - Question2 (example: )
-        - Question3 (example: )
-        - Question4 (example: )
-        - Question5 (example: )
-
+        For users who are not used to the story I want you to give several choices in the question.
+        Write five questions in Korean(한글).
+        Your response should be python list with strings consist of questions.
         ---
         Novel Context: {Context}
+        ---
+        Format: ['당신은 ...? (답변의 예시: ...): ', ...]
+        ---
+        Questions: 
         """
     )
     questions_chain = questions_prompt_template | llm | StrOutputParser()
-    questions = questions_chain.invoke({"Language": language, "Context": world_summary})
-    print(questions)
-    questions = questions.strip().split('\n')
-    return questions
+    
+    default_questions = [
+        "당신의 캐릭터 이름은 무엇인가요? (엔터로 스킵할시 자동으로 이름이 생성됩니다): ",
+        "당신의 캐릭터의 성별은 무엇인가요? (엔터로 스킵할시 자동으로 성별이 선택됩니다): ",
+        "당신의 캐릭터는 몇살인가요? (엔터로 스킵할시 자동으로 나이가 선택됩니다): ",
+    ]
+    while(True):
+        try:
+            questions = questions_chain.invoke({ "Context": world_summary })
+            questions_list = ast.literal_eval(questions)
+            questions_list = [question.replace('[', '').replace(']', '') for question in questions_list]
+            return default_questions + questions_list
+        except:
+            continue
+
+
 
 def create_character_profile(questions, language="korean"):
     llm = ChatUpstage()
@@ -38,36 +44,36 @@ def create_character_profile(questions, language="korean"):
         """
         Using the answers provided below, create a detailed character profile for a fantasy tabletop RPG.
         The character should reflect the given attributes. Please ensure to use the specified field names and format in your output consistently.
+        Consider Player's answers as the input and generate a character profile based on the given context.
+        When player's answer is not given, please use a appropriate value for corresponding fields made by yourself.
 
         **Output should strictly follow this format:**
 
-        - name: [character name]
-        - gender: [male/female/other]
-        - age: [age range or exact age]
-        - race: [character race]
-        - job: [character job]
-        - stamina: [1-100]
-        - intelligence: [1-100]
-        - combat_power: [1-100]
-        - agility: [1-100]
-        - background: [character background]
+        - name: "character name"
+        - gender: "Male" or "Female"
+        - age: age on integer
+        - race: "character race"
+        - job: "character job"
+        - stamina: integer between [1, 100]
+        - intelligence: integer between [1, 100]
+        - combat_power: integer between [1, 100]
+        - agility: integer between [1, 100]
+        - background: "character background"
 
         **Player Answers:**
-        - {answer1}
-        - {answer2}
-        - {answer3}
-        - {answer4}
-        - {answer5}
+        qna:
+        {qna}
         ---
         Please write the output in English.
         """
     )
     character_creation_chain = character_creation_prompt_template | llm | StrOutputParser()
-    answers = {}
+    answers = []
     for i, question in enumerate(questions):
         print(f"Question {i+1}: {question}")
-        answers[f"answer{i+1}"] = input("Your answer: ")
-    character_description = character_creation_chain.invoke({**answers, "Language": language})
+        answers.append(input("Your answer: "))
+    qna = [f"Q: {questions[i]}\nA: {answers[i]}" for i in range(len(questions))]
+    character_description = character_creation_chain.invoke({ "qna": qna, "Language": language})
     return character_description
 
 def parse_character_data_to_json(text):
@@ -96,15 +102,16 @@ def parse_character_data_to_json(text):
         if match:
             params_dict[key] = int(match.group(1))
     character_dict['params'] = params_dict
-    return json.dumps(character_dict, indent=4, ensure_ascii=False)
+    # return json.dumps(character_dict, indent=4, ensure_ascii=False)
+    return character_dict
 
 def main():
-    with open("/path/to/Harry_Potter_summary.txt", "r", encoding="utf-8") as file:
+    with open("/Users/hyunkoolee/upstage_kai_llm/llm_dnd/harrypotter_scenario/world_summary.txt", "r", encoding="utf-8") as file:
         world_summary = file.read()
+    
+    # 질문 준비
     questions = generate_character_creation_questions(world_summary)
     character_description = create_character_profile(questions)
-    print("Your generated character details:")
-    print(character_description)
     character_json = parse_character_data_to_json(character_description)
     print(character_json)
 

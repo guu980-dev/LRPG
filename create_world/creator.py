@@ -1,7 +1,8 @@
 from .generator import generate_chain
 from .utils import load_yaml, load_txt
+import ast
 
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 
 
 # def create_custom_world():
@@ -28,17 +29,22 @@ def create_scenario(topic, context, prompt, output_count=5,language='한국어')
 
 def create_storyline(topic, context, prompt, output_count=5,language='한국어'):
     '''
-    주어진 scenario를 바탕으로 세부적인 게임 storyline을 {output_count} 개 생성합니다.
+    주어진 scenario를 바탕으로 세부적인 게임 storyline을 {output_count} 개의 원소로 가지는 파이썬 리스트로 생성합니다.
     '''
     prompt_variable = {'topic':topic,
                        'output_count': output_count,
                        'context':context,
                        'language':language,}
-                         
-    storyline = generate_chain(prompt,
-                               prompt_variable,
-                               parser=JsonOutputParser())
-    return storyline
+
+    while(True):
+        try:
+            storyline = generate_chain(prompt,
+                                    prompt_variable,
+                                    parser=StrOutputParser())
+            storyline_list = ast.literal_eval(storyline)
+            return storyline_list
+        except:
+            continue
 
 
 if __name__ == '__main__':
