@@ -4,6 +4,8 @@ from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 import ast
 from . import formatter
 import random
+from openai import OpenAI
+
 
 
     # """
@@ -373,6 +375,46 @@ def create_good_ending(world_summary, player_profile, player_restriction, player
   good_ending = chain.invoke({ "world_summary": world_summary, "player_profile": player_profile, "player_restriction": player_restriction, "player_capability": player_capability, "entire_story": entire_story, "previous_conversation": previous_conversation })
 
   return good_ending
+
+
+def convert_to_image_prompt(topic, world_summary, player_profile, round_description):
+  llm = ChatUpstage()
+  prompt_template = PromptTemplate.from_template(
+    """
+    Please provide visual prompt of the host message which will be used for text-image generation.
+    Host message is D&D game scenario scene with choices on {topic}.
+    Visual prompt should consider the context and user persona.
+    Visual prompt should represent the scenario's scene and choices in the image.
+    ---
+    Fictional Universe: {world_summary}
+    ---
+    Player Profile: {player_profile}
+    ---
+    This Round Scenario: {round_description}
+    ---
+    Visual Prompt:
+    """
+  )
+  chain = prompt_template | llm | StrOutputParser()
+
+  response = chain.invoke({ "topic": topic, "world_summary": world_summary, "player_profile": player_profile, "round_description": round_description })
+
+  return response
+
+
+def generate_image(prompt):
+  client = OpenAI()
+  response = client.images.generate(
+    model="dall-e-3",
+    prompt=prompt,
+    size="1024x1024",
+    quality="standard",
+    n=1,
+  )
+
+  image_url = response.data[0].url
+
+  return image_url
 
 
 def play_game(game_scenario, world_summary, player_profile):
