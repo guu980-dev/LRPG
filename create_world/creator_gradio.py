@@ -1,11 +1,13 @@
 from .generator import generate_chain
 from .utils import load_yaml, load_txt, save_json
+from .prompt import create_custom_world_prompt, create_scenario_prompt, create_storyline_prompt
 import ast
-
 from langchain_core.output_parsers import StrOutputParser
 
 
-def create_custom_world(prompt, language='한국어', save=False):
+def create_custom_world(topic, world_story, save=False):
+    prompt=create_custom_world_prompt
+    
     '''
     config: prompt.yaml
     prompt = config['create_custom_world_prompt']
@@ -18,13 +20,11 @@ def create_custom_world(prompt, language='한국어', save=False):
     빗자루를 타고 날아다니며, 신기한 마법 생물 그리핀, 피닉스 등이 있습니다. 
     어둠의 세력과 맞서 싸우세요.
     '''
-    topic = input("세계관 주제를 알려 주세요 ex)마법사 세계, 우주 전쟁: ")
-    world_story = input("구체적인 세계관 설명과 룰을 소개하세요: ")
     prompt_variable = {'topic':topic,
                        'context':world_story,
-                       'language':language,}
+                       'language': "한국어",}
     
-    world_summary =  generate_chain(prompt, prompt_variable)
+    world_summary = generate_chain(prompt, prompt_variable)
 
     if save == True:
         save_json(topic + '_world.json', {'topic':topic, 'world_summary':world_summary})
@@ -32,8 +32,9 @@ def create_custom_world(prompt, language='한국어', save=False):
     return topic, world_summary
 
 
-
-def create_scenario(topic, context, output_count=5, language='한국어', save=False):
+def create_scenario(topic, context, prompt, output_count=5, save=False):
+    prompt=create_scenario_prompt
+    
     '''
     config: prompt.yaml
     prompt = config['create_scenario_prompt']
@@ -43,7 +44,7 @@ def create_scenario(topic, context, output_count=5, language='한국어', save=F
     prompt_variable = {'topic':topic,
                        'output_count':output_count,
                        'context':context,
-                       'language':language,}
+                       'language': '한국어',}
     
     scenario = generate_chain(prompt,
                               prompt_variable)
@@ -64,17 +65,19 @@ def create_scenario(topic, context, output_count=5, language='한국어', save=F
             continue
 
 
-def create_storyline(topic, context, output_count=5, language='한국어', save=False):
+def create_storyline(topic, context, prompt, output_count=5, save=False):
     '''
     config: prompt.yaml
     prompt = config['create_storyline_prompt']
     
     주어진 scenario를 바탕으로 세부적인 게임 storyline을 {output_count} 개의 원소로 가지는 파이썬 리스트로 생성합니다.
     '''
+    prompt=create_storyline_prompt
+    
     prompt_variable = {'topic':topic,
                        'output_count': output_count,
                        'context':context,
-                       'language':language,}
+                       'language': '한국어',}
  
     while(True):
         try:
@@ -91,23 +94,3 @@ def create_storyline(topic, context, output_count=5, language='한국어', save=
         except:
             continue
             
-
-if __name__ == '__main__':
-    config = load_yaml(path='prompt.yaml')
-    create_new_world = True
-    save = True
-
-    if create_new_world:
-        topic, world_summary = create_custom_world(config['create_custom_world_prompt'], save=save)
-
-    else:
-        topic = 'harry potter'
-        world_summary = load_txt('dummy/world_summary.txt')
-
-    print(world_summary)
-    scenario = create_scenario(topic, world_summary, config['create_scenario_prompt'], output_count=1, save=save)
-    print(scenario)
-    print(create_storyline(topic, scenario[0], config['create_storyline_prompt'], save=save))
-
-    
-
