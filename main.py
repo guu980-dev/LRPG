@@ -13,8 +13,8 @@ def main():
   topic = 'harry potter'
   world_summary = load_txt(world_summary_path)
   config = load_yaml(path='create_world/prompt.yaml')
-  scenario = create_scenario(topic, world_summary, config['create_scenario_prompt'], output_count=10)
-  round_stories = create_storyline(topic, scenario, config['create_storyline_prompt'])
+  scenario = create_scenario(topic, world_summary, config['create_scenario_prompt'], output_count=1)
+  round_stories = create_storyline(topic, scenario[0], config['create_storyline_prompt'])
   print("세계가 만들어졌습니다!")
   print('-----------------------------')
   
