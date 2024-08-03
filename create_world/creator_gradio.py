@@ -32,7 +32,7 @@ def create_custom_world(topic, world_story, save=False):
     return topic, world_summary
 
 
-def create_scenario(topic, context, prompt, output_count=5, save=False):
+def create_scenario(topic, context, output_count=5, save=False):
     prompt=create_scenario_prompt
     
     '''
@@ -65,7 +65,7 @@ def create_scenario(topic, context, prompt, output_count=5, save=False):
             continue
 
 
-def create_storyline(topic, context, prompt, output_count=5, save=False):
+def create_storyline(topic, context, output_count=5, save=False):
     '''
     config: prompt.yaml
     prompt = config['create_storyline_prompt']
