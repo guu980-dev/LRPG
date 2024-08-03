@@ -3,7 +3,7 @@ import gradio as gr
 from create_world.creator_gradio import create_custom_world, create_scenario, create_storyline
 from create_world.utils import load_txt
 from create_character.gradio import generate_character_creation_questions, create_character_profile, parse_character_data_to_json
-from play_game.main import create_initial_conversation, create_round_description, create_round_result, create_bad_ending, create_good_ending
+from play_game.main import create_initial_conversation, create_round_description, create_round_result, create_bad_ending, create_good_ending, convert_to_image_prompt, generate_image
 from play_game.formatter import player_profile_to_str, to_round_result
 
 # 1. Main & World Selection
@@ -98,8 +98,8 @@ def main():
             previous_conversation = gr.State("")
             previous_round_result = gr.State("")
 
-            @gr.render(inputs=[world_summary, stories, player_profile, round, player_restriction, player_capability, previous_conversation, previous_round_result], triggers=[round.change, player_profile.change])
-            def on_round(_world_summary, _stories, _player_profile, _round, _player_restriction, _player_capability, _previous_conversation, _previous_round_result):
+            @gr.render(inputs=[world_summary, stories, player_profile, round, player_restriction, player_capability, previous_conversation, previous_round_result, game_topic], triggers=[round.change, player_profile.change])
+            def on_round(_world_summary, _stories, _player_profile, _round, _player_restriction, _player_capability, _previous_conversation, _previous_round_result, _game_topic):
                 entire_story = [f"{idx+1}. {scenario["title"]}\n{scenario["story"]}\n\n" for idx, scenario in enumerate(_stories)]
                 player_profile_str = player_profile_to_str({ **_player_profile, 'params': _player_capability })
 
@@ -134,7 +134,18 @@ def main():
                         gr.Markdown(f"## {_round}. {round_scenario["title"]}")
                         with gr.Row():
                             gr.Markdown(round_description)
-                            gr.Image()
+                            with gr.Column():
+                                image_output = gr.Image(interactive=False, scale=5)
+                                generate_image_btn = gr.Button("이미지 생성")
+                                def click_generate_image_btn():
+                                    gr.Info("이미지 생성중입니다...")
+                                    image_generation_prompt = convert_to_image_prompt(_game_topic, _world_summary, _player_profile, round_description)
+                                    print(image_generation_prompt)
+                                    image_url = generate_image(image_generation_prompt)
+                                    gr.Info("이미지 생성 완료!")
+                                    return gr.Image(image_url)
+                                generate_image_btn.click(fn=click_generate_image_btn, outputs=image_output)
+                                
                         with gr.Row():
                             player_response = gr.Textbox(label="당신만의 결정을 내려주세요!", info="하나의 문장으로 당신이 할 행동과 그에 대한 근거와 이유를 명확하게 설명해주세요", interactive=True, scale=10)
                             submit_btn = gr.Button("결정", scale=1)
