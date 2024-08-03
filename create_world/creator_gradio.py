@@ -85,6 +85,10 @@ def create_storyline(topic, context, output_count=5, save=False):
                                     prompt_variable,
                                     parser=StrOutputParser())
             storyline_list = ast.literal_eval(storyline)
+            
+            if not storyline_list[0].get('title') or  not storyline_list[0].get('story'):
+                raise Exception()
+            
             if save== True:
                 prompt_variable['scenario'] = context
                 prompt_variable['story_line'] = storyline_list

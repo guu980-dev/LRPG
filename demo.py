@@ -37,14 +37,18 @@ def main():
                     
                     # @world_create_btn.click(inputs=[ topic, world_story ], outputs=[ game_topic, world_summary, create_story_btn ])
                     def click_world_create_btn(topic, world_story):
+                        gr.Info("세계관 생성중입니다...")
                         topic, summary = create_custom_world(topic, world_story)
+                        gr.Info("세계관 생성 완료!")
                         return { game_topic: topic, world_summary: summary, create_story_btn: gr.Button(visible=True) }
                     world_create_btn.click(fn=click_world_create_btn, inputs=[ topic, world_story ], outputs=[ game_topic, world_summary, create_story_btn ])
 
                     # @create_story_btn.click(inputs=[ game_topic, world_summary ], outputs= [ stories, result ])
                     def click_create_story_btn(topic, summary):
+                        gr.Info("스토리 생성중입니다...")
                         scenario = create_scenario(topic, summary, output_count=1, save=False)
                         _stories = create_storyline(topic, scenario[0], save=False)
+                        gr.Info("스토리 생성 완료!")
                         return { stories: _stories, result: gr.Markdown(visible=True) }
                     create_story_btn.click(fn=click_create_story_btn, inputs=[ game_topic, world_summary ], outputs= [ stories, result ])
 
@@ -52,10 +56,12 @@ def main():
                     create_story_btn = gr.Button("스토리 생성")
                     result = gr.Markdown("## 스토리 생성이 완료되었습니다. 캐릭터 생성 탭으로 이동해주세요.", visible=False)
                     def click_create_story_btn():
+                        gr.Info("스토리 생성중입니다...")
                         topic = "Harry Potter"
                         _world_summary = load_txt("harrypotter_scenario/world_summary.txt")
                         scenario = create_scenario(topic, _world_summary, output_count=1, save=False)
                         _stories = create_storyline(topic, scenario[0], save=False)
+                        gr.Info("스토리 생성 완료!")
                         return { game_topic: topic, world_summary: _world_summary, stories: _stories, result: gr.Markdown(visible=True) }
                     create_story_btn.click(fn=click_create_story_btn, outputs=[ game_topic, world_summary, stories, result ])
 
@@ -71,7 +77,16 @@ def main():
                 result = gr.Markdown("## 캐릭터 생성이 완료되었습니다. 게임 진행 탭으로 이동해주세요.", visible=False)
 
                 def click_char_create_btn(*_answers):
+                    gr.Info("캐릭터 생성중입니다...")
                     character_profile = parse_character_data_to_json(create_character_profile(questions, _answers))
+                    profile_keys = [key for key in character_profile.keys()]
+                    required_keys = ["name", "gender", "age", "race", "job", "background"]
+                    params_keys = [key for key in character_profile["params"].keys()]
+                    required_params_keys = ["stamina", "intelligence", "combat_power", "agility"]
+                    if not all(item in profile_keys for item in required_keys) or not all(item in params_keys for item in required_params_keys):
+                        gr.Error("캐릭터 생성에 실패했습니다. 항목들을 자세하게 빠짐없이 기입해주세요.")
+                        return
+                    gr.Info("캐릭터 생성 완료!")
                     return { player_profile: character_profile, result: gr.Markdown(visible=True) }
                 char_create_btn.click(fn=click_char_create_btn, inputs=answers, outputs=[player_profile, result])
                 
@@ -97,18 +112,24 @@ def main():
                         return { round: 1, player_restriction: { "life": 10, "money": 10 }, player_capability: _player_profile["params"] }
                     game_start_btn.click(fn=click_game_start_btn, outputs=[round, player_restriction, player_capability])
                 else:
+                    round_story = f"{_round}. {round_scenario["title"]}: {round_scenario["story"]}\n"
                     if _player_restriction["life"] <= 0 or _player_restriction["money"] <= 0:
                         bad_ending = create_bad_ending(_world_summary, player_profile_str, _player_restriction, _player_capability, entire_story, round_story, _previous_conversation, _previous_round_result)
                         display_bad_ending = gr.Markdown(bad_ending)
                         restart_button = gr.Button("다시 시작하기")
+                        def click_restart_button():
+                            return { round: 0, player_restriction: {}, player_capability: {}, previous_conversation: "", previous_round_result: "" }
+                        restart_button.click(fn=click_restart_button, outputs=[round, player_restriction, player_capability, previous_conversation, previous_round_result])
                     
                     elif _round >= len(_stories):
                         good_ending = create_good_ending(_world_summary, player_profile_str, _player_restriction, _player_capability, entire_story, _previous_conversation)
                         display_good_ending = gr.Markdown(good_ending)
                         restart_button = gr.Button("다시 시작하기")
+                        def click_restart_button():
+                            return { round: 0, player_restriction: {}, player_capability: {}, previous_conversation: "", previous_round_result: "" }
+                        restart_button.click(fn=click_restart_button, outputs=[round, player_restriction, player_capability, previous_conversation, previous_round_result])
 
                     else:
-                        round_story = f"{_round}. {round_scenario["title"]}: {round_scenario["story"]}\n"
                         round_description = create_round_description(_world_summary, player_profile_str, _player_restriction, _player_capability, entire_story, round_story, _previous_conversation, _previous_round_result)
                         gr.Markdown(f"## {_round}. {round_scenario["title"]}")
                         with gr.Row():
@@ -118,13 +139,17 @@ def main():
                             player_response = gr.Textbox(label="당신만의 결정을 내려주세요!", info="하나의 문장으로 당신이 할 행동과 그에 대한 근거와 이유를 명확하게 설명해주세요", interactive=True, scale=10)
                             submit_btn = gr.Button("결정", scale=1)
 
-                        def click_submit_btn(__round, _round_description, _player_response, _previous_conversation, _player_restriction, _player_capability):
+                        def click_submit_btn(_player_response, _previous_conversation, _player_restriction, _player_capability):
+                            gr.Info("결정을 반영중입니다...")
+                            
                             # __round = input["_round"]
                             # _round_description = input["round_description"]
                             # _player_response = input["player_response"]
                             # _previous_conversation = input["previous_conversation"]
                             # _player_restriction = input["player_restriction"]
                             # _player_capability = input["player_capability"]
+                            __round = _round
+                            _round_description = round_description
 
                             # Reflect the result and update player status
                             round_result = create_round_result(_world_summary, player_profile_str, _player_restriction, _player_capability, _round_description, _player_response)
@@ -159,24 +184,20 @@ def main():
                             }
                         submit_btn.click(
                             fn=click_submit_btn,
-                            inputs=[ _round, round_description, player_response, previous_conversation, player_restriction, player_capability ],
+                            inputs=[ player_response, previous_conversation, player_restriction, player_capability ],
                             outputs=[round, previous_conversation, previous_round_result, player_restriction, player_capability]
                         )
 
 
-                    def click_restart_button():
-                        return { round: 0, player_restriction: {}, player_capability: {}, previous_conversation: "", previous_round_result: "" }
-                    restart_button.click(fn=click_restart_button, output=[round, player_restriction, player_capability, previous_conversation, previous_round_result])
-
-        # For Debugging
-        game_topic_debugging = gr.Textbox(game_topic.value, label="game_topic_debugging")
-        game_topic.change(lambda x: gr.Textbox(x), inputs=[game_topic], outputs=game_topic_debugging)
-        world_summary_debugging=gr.Textbox(world_summary.value, label="world_summary_debugging")
-        world_summary.change(lambda x: gr.Textbox(x), inputs=[world_summary], outputs=world_summary_debugging)
-        stories_debugging=gr.Textbox(stories.value, label="stories_debugging")
-        stories.change(lambda x: gr.Textbox(x), inputs=[stories], outputs=stories_debugging)
-        player_profile_debugging=gr.Textbox(player_profile.value, label="player_profile_debugging")
-        player_profile.change(lambda x: gr.Textbox(x), inputs=[player_profile], outputs=player_profile_debugging)
+        # # For Debugging
+        # game_topic_debugging = gr.Textbox(game_topic.value, label="game_topic_debugging")
+        # game_topic.change(lambda x: gr.Textbox(x), inputs=[game_topic], outputs=game_topic_debugging)
+        # world_summary_debugging=gr.Textbox(world_summary.value, label="world_summary_debugging")
+        # world_summary.change(lambda x: gr.Textbox(x), inputs=[world_summary], outputs=world_summary_debugging)
+        # stories_debugging=gr.Textbox(stories.value, label="stories_debugging")
+        # stories.change(lambda x: gr.Textbox(x), inputs=[stories], outputs=stories_debugging)
+        # player_profile_debugging=gr.Textbox(player_profile.value, label="player_profile_debugging")
+        # player_profile.change(lambda x: gr.Textbox(x), inputs=[player_profile], outputs=player_profile_debugging)
 
 
     demo.launch(share=True)
