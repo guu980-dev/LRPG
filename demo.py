@@ -140,7 +140,6 @@ def main():
                                 def click_generate_image_btn():
                                     gr.Info("이미지 생성중입니다...")
                                     image_generation_prompt = convert_to_image_prompt(_game_topic, _world_summary, _player_profile, round_description)
-                                    print(image_generation_prompt)
                                     image_url = generate_image(image_generation_prompt)
                                     gr.Info("이미지 생성 완료!")
                                     return gr.Image(image_url)
