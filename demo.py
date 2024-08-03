@@ -109,7 +109,7 @@ def main():
                     game_start_btn = gr.Button("게임 시작")
                     
                     def click_game_start_btn():
-                        return { round: 1, player_restriction: { "life": 10, "money": 10 }, player_capability: _player_profile["params"] }
+                        return { round: 1, player_restriction: { "life": 30, "money": 30 }, player_capability: _player_profile["params"] }
                     game_start_btn.click(fn=click_game_start_btn, outputs=[round, player_restriction, player_capability])
                 else:
                     round_story = f"{_round}. {round_scenario["title"]}: {round_scenario["story"]}\n"
