@@ -149,13 +149,6 @@ def main():
 
                         def click_submit_btn(_player_response, _previous_conversation, _player_restriction, _player_capability):
                             gr.Info("결정을 반영중입니다...")
-                            
-                            # __round = input["_round"]
-                            # _round_description = input["round_description"]
-                            # _player_response = input["player_response"]
-                            # _previous_conversation = input["previous_conversation"]
-                            # _player_restriction = input["player_restriction"]
-                            # _player_capability = input["player_capability"]
                             __round = _round
                             _round_description = round_description
 
@@ -196,7 +189,8 @@ def main():
                             outputs=[round, previous_conversation, previous_round_result, player_restriction, player_capability]
                         )
 
-                        player_status_display = gr.Markdown(f"## {re.sub(r'\"', '', _player_profile['name'])}님의 상태")
+                        player_name = re.sub(r'"', '', _player_profile['name'])
+                        player_status_display = gr.Markdown(f"## {player_name}님의 상태")
                         with gr.Group():
                             with gr.Row():
                                 gr.Textbox(_player_restriction['life'], interactive=False, label="목숨")
