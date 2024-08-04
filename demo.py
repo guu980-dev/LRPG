@@ -1,4 +1,5 @@
 import gradio as gr
+import re
 
 from create_world.creator_gradio import create_custom_world, create_scenario, create_storyline
 from create_world.utils import load_txt
@@ -9,11 +10,6 @@ from play_game.formatter import player_profile_to_str, to_round_result
 # 1. Main & World Selection
 # 2. Character Creation
 # 3. Game Play
-
-    # topic, world_summary = create_custom_world(config['create_custom_world_prompt'], language='한국어', save=False)
-    # scenario = create_scenario(topic, world_summary, config['create_scenario_prompt'], output_count=1)
-    # round_stories = create_storyline(topic, scenario[0], config['create_storyline_prompt'])
-
 
 def main():
     with gr.Blocks() as demo:
@@ -109,11 +105,12 @@ def main():
                     game_start_btn = gr.Button("게임 시작")
                     
                     def click_game_start_btn():
-                        return { round: 1, player_restriction: { "life": 30, "money": 30 }, player_capability: _player_profile["params"] }
+                        return { round: 1, player_restriction: { "life": 20, "money": 20 }, player_capability: _player_profile["params"] }
                     game_start_btn.click(fn=click_game_start_btn, outputs=[round, player_restriction, player_capability])
                 else:
                     round_story = f"{_round}. {round_scenario['title']}: {round_scenario['story']}\n"
                     if _player_restriction["life"] <= 0 or _player_restriction["money"] <= 0:
+                        gr.Markdown("## 아쉽게도 게임 오버되었습니다. 다른 선택을 통해 새로운 이야기의 결말을 만들어보세요.")
                         bad_ending = create_bad_ending(_world_summary, player_profile_str, _player_restriction, _player_capability, entire_story, round_story, _previous_conversation, _previous_round_result)
                         display_bad_ending = gr.Markdown(bad_ending)
                         restart_button = gr.Button("다시 시작하기")
@@ -122,6 +119,7 @@ def main():
                         restart_button.click(fn=click_restart_button, outputs=[round, player_restriction, player_capability, previous_conversation, previous_round_result])
                     
                     elif _round >= len(_stories):
+                        gr.Markdown("## 축하합니다! 게임 클리어에 성공하셨습니다")
                         good_ending = create_good_ending(_world_summary, player_profile_str, _player_restriction, _player_capability, entire_story, _previous_conversation)
                         display_good_ending = gr.Markdown(good_ending)
                         restart_button = gr.Button("다시 시작하기")
@@ -197,6 +195,17 @@ def main():
                             inputs=[ player_response, previous_conversation, player_restriction, player_capability ],
                             outputs=[round, previous_conversation, previous_round_result, player_restriction, player_capability]
                         )
+
+                        player_status_display = gr.Markdown(f"## {re.sub(r'\"', '', _player_profile['name'])}님의 상태")
+                        with gr.Group():
+                            with gr.Row():
+                                gr.Textbox(_player_restriction['life'], interactive=False, label="목숨")
+                                gr.Textbox(_player_restriction['money'], interactive=False, label="소지금")
+                            with gr.Row():
+                                gr.Textbox(_player_capability["stamina"], interactive=False, label="스태미너")
+                                gr.Textbox(_player_capability["intelligence"], interactive=False, label="지능")
+                                gr.Textbox(_player_capability["combat_power"], interactive=False, label="전투력")
+                                gr.Textbox(_player_capability["agility"], interactive=False, label="민첩성")
 
 
         # # For Debugging

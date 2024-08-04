@@ -155,6 +155,25 @@ def get_required_capabilities(world_summary, player_profile, player_restriction,
       continue
 
 
+def restrict_effect_range(effect):
+  new_restriction = effect.get('player_restriction')
+  new_capability = effect.get('player_capability')
+  
+  for key, value in effect.get('player_restriction').items():
+    if value > 10:
+      new_restriction[key] = 10
+    elif value < -10:
+      new_capability[key] = -10
+
+  for key, value in effect.get('player_capability').items():
+    if value > 20:
+      new_capability[key] = 20
+    elif value < -20:
+      new_capability[key] = -20
+
+  return { "player_restriction": new_restriction, "player_capability": new_capability }
+
+
 def get_expected_result(world_summary, player_profile, player_restriction, player_capability, round_description, player_response):
   llm = ChatUpstage()
   prompt_template = PromptTemplate.from_template(
@@ -212,7 +231,8 @@ def get_expected_result(world_summary, player_profile, player_restriction, playe
       
       if response.get('effect').get('player_restriction') == None or response.get("effect").get('player_capability') == None or response.get("reason") == None:
         raise Exception()
-
+      
+      response['effect'] = restrict_effect_range(response['effect'])
       return response
     except:
       continue
@@ -280,6 +300,7 @@ def get_unexpected_result(world_summary, player_profile, player_restriction, pla
       if response.get('effect').get('player_restriction') == None or response.get("effect").get('player_capability') == None or response.get("reason") == None:
         raise Exception()
 
+      response['effect'] = restrict_effect_range(response['effect'])
       return response
     except:
       continue

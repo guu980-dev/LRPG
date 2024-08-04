@@ -41,6 +41,7 @@ def generate_character_creation_questions(api_key, world_summary, language="kore
             print(f"Error generating questions: {e}")
             continue
 
+
 def create_character_profile(api_key, questions, answers, language="korean"):
     llm = ChatUpstage(api_key=api_key)
     character_creation_prompt_template = PromptTemplate.from_template(
@@ -75,6 +76,7 @@ def create_character_profile(api_key, questions, answers, language="korean"):
     character_description = character_creation_chain.invoke({"qna": qna, "Language": language})
     return character_description
 
+
 def parse_character_data_to_json(text):
     fields = {
         'name': r"- name: (.*)",
@@ -103,6 +105,7 @@ def parse_character_data_to_json(text):
     character_dict['params'] = params_dict
     return character_dict
 
+
 def run_question_generation(api_key, file_path):
     # Read the world summary from the uploaded file
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -113,6 +116,7 @@ def run_question_generation(api_key, file_path):
     
     return questions
 
+
 def run_profile_generation(api_key, file_path, *answers):
     questions = run_question_generation(api_key, file_path)
     
@@ -120,6 +124,7 @@ def run_profile_generation(api_key, file_path, *answers):
     character_description = create_character_profile(api_key, questions, answers)
     character_json = parse_character_data_to_json(character_description)
     return character_description, json.dumps(character_json, indent=4, ensure_ascii=False)
+
 
 def main():
     with gr.Blocks() as demo:
@@ -165,6 +170,7 @@ def main():
 
     # Launch the Gradio interface
     demo.launch()
+
 
 if __name__ == "__main__":
     main()
