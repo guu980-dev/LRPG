@@ -100,7 +100,7 @@ def main():
 
             @gr.render(inputs=[world_summary, stories, player_profile, round, player_restriction, player_capability, previous_conversation, previous_round_result, game_topic], triggers=[round.change, player_profile.change])
             def on_round(_world_summary, _stories, _player_profile, _round, _player_restriction, _player_capability, _previous_conversation, _previous_round_result, _game_topic):
-                entire_story = [f"{idx+1}. {scenario["title"]}\n{scenario["story"]}\n\n" for idx, scenario in enumerate(_stories)]
+                entire_story = [f"{idx+1}. {scenario['title']}\n{scenario['story']}\n\n" for idx, scenario in enumerate(_stories)]
                 player_profile_str = player_profile_to_str({ **_player_profile, 'params': _player_capability })
 
                 round_scenario = _stories[_round-1]
@@ -112,7 +112,7 @@ def main():
                         return { round: 1, player_restriction: { "life": 30, "money": 30 }, player_capability: _player_profile["params"] }
                     game_start_btn.click(fn=click_game_start_btn, outputs=[round, player_restriction, player_capability])
                 else:
-                    round_story = f"{_round}. {round_scenario["title"]}: {round_scenario["story"]}\n"
+                    round_story = f"{_round}. {round_scenario['title']}: {round_scenario['story']}\n"
                     if _player_restriction["life"] <= 0 or _player_restriction["money"] <= 0:
                         bad_ending = create_bad_ending(_world_summary, player_profile_str, _player_restriction, _player_capability, entire_story, round_story, _previous_conversation, _previous_round_result)
                         display_bad_ending = gr.Markdown(bad_ending)
@@ -131,7 +131,7 @@ def main():
 
                     else:
                         round_description = create_round_description(_world_summary, player_profile_str, _player_restriction, _player_capability, entire_story, round_story, _previous_conversation, _previous_round_result)
-                        gr.Markdown(f"## {_round}. {round_scenario["title"]}")
+                        gr.Markdown(f"## {_round}. {round_scenario['title']}")
                         with gr.Row():
                             gr.Markdown(round_description)
                             with gr.Column():

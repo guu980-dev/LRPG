@@ -418,7 +418,7 @@ def generate_image(prompt):
 
 
 def play_game(game_scenario, world_summary, player_profile):
-  entire_story = [f"{idx+1}. {scenario["title"]}\n{scenario["story"]}\n\n" for idx, scenario in enumerate(game_scenario)]
+  entire_story = [f"{idx+1}. {scenario['title']}\n{scenario['story']}\n\n" for idx, scenario in enumerate(game_scenario)]
   conversation = ""
   previous_conversation = ""
   previous_round_result = ""
@@ -431,7 +431,7 @@ def play_game(game_scenario, world_summary, player_profile):
   print('-----------------------------')
   for round_idx, round_scenario in enumerate(game_scenario):
     # Display this round story
-    round_story = f"{round_idx+1}. {round_scenario["title"]}: {round_scenario["story"]}\n"
+    round_story = f"{round_idx+1}. {round_scenario['title']}: {round_scenario['story']}\n"
     round_description = create_round_description(world_summary, player_profile_str, player_restriction, player_capability, entire_story, round_story, previous_conversation, previous_round_result)
     print(f"Round {round_idx+1}: {round_description}")
 

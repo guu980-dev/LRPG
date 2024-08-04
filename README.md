@@ -1,3 +1,9 @@
+---
+title: LRPG
+app_file: demo.py
+sdk: gradio
+sdk_version: 4.37.2
+---
 # lRPG (LLM RPG)
 
 This project is working in process.
