@@ -118,7 +118,7 @@ def main():
                             return { round: 0, player_restriction: {}, player_capability: {}, previous_conversation: "", previous_round_result: "" }
                         restart_button.click(fn=click_restart_button, outputs=[round, player_restriction, player_capability, previous_conversation, previous_round_result])
                     
-                    elif _round >= len(_stories):
+                    elif _round > len(_stories):
                         gr.Markdown("## 축하합니다! 게임 클리어에 성공하셨습니다")
                         good_ending = create_good_ending(_world_summary, player_profile_str, _player_restriction, _player_capability, entire_story, _previous_conversation)
                         display_good_ending = gr.Markdown(good_ending)
