@@ -1,6 +1,6 @@
 ---
 title: LRPG
-app_file: demo.py
+app_file: demo_hf_space.py
 sdk: gradio
 sdk_version: 4.37.2
 ---
